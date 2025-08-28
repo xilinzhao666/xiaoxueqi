@@ -98,3 +98,4 @@ help:
 .PHONY: all debug clean install-deps check-deps create-db run help directories
 )
 )
+)
