@@ -5,6 +5,19 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/include",
+                "/home/ada/桌面/share/include",
+                "/usr/include/mysql",
+                "/usr/include/mysql++",
+                "/usr/include/openssl",
+                "/usr/local/include",
+                "/usr/include/c++/11",
+                "/usr/include/x86_64-linux-gnu/c++/11",
+                "/usr/include/c++/11/backward",
+                "/usr/lib/gcc/x86_64-linux-gnu/11/include",
+                "/usr/local/include",
+                "/usr/include/x86_64-linux-gnu",
+                "/usr/include"
+                "${workspaceFolder}/include",
                 "/usr/include/mysql",
                 "/usr/include/mysql++",
                 "/usr/include/openssl",
@@ -22,6 +35,7 @@
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "linux-gcc-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
             "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
