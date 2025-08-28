@@ -131,9 +131,21 @@ sudo apt-get install libmysqlclient-dev mysql-server
 sudo apt-get install libssl-dev
 ```
 
-2. **创建数据库**:
+2. **启动和配置MySQL服务**:
 ```bash
-# 登录MySQL
+# 启动MySQL服务
+sudo systemctl start mysql
+
+# 设置MySQL开机自启
+sudo systemctl enable mysql
+
+# 检查MySQL服务状态
+sudo systemctl status mysql
+
+# 安全配置MySQL（可选但推荐）
+sudo mysql_secure_installation
+
+# 登录MySQL（注意是mysql命令，不是mysql-server）
 mysql -u root -p
 
 # 创建数据库
@@ -142,6 +154,42 @@ CREATE DATABASE hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 # 创建用户（可选）
 CREATE USER 'hospital_user'@'localhost' IDENTIFIED BY 'password';
 GRANT ALL PRIVILEGES ON hospital_db.* TO 'hospital_user'@'localhost';
+FLUSH PRIVILEGES;
+
+# 退出MySQL
+EXIT;
+```
+
+### 常见问题解决
+
+#### 1. MySQL服务未启动
+```bash
+# 检查MySQL服务状态
+sudo systemctl status mysql
+
+# 如果未运行，启动服务
+sudo systemctl start mysql
+
+# 如果启动失败，查看日志
+sudo journalctl -u mysql.service
+```
+
+#### 2. 无法连接MySQL
+```bash
+# 检查MySQL是否在监听端口
+sudo netstat -tlnp | grep :3306
+
+# 或使用ss命令
+sudo ss -tlnp | grep :3306
+```
+
+#### 3. 权限问题
+```bash
+# 如果无法以root用户登录，尝试
+sudo mysql -u root
+
+# 然后设置root密码
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
 FLUSH PRIVILEGES;
 ```
 
@@ -155,12 +203,18 @@ FLUSH PRIVILEGES;
 包含完整的表结构、测试数据、视图和存储过程：
 
 ```bash
+# 确保MySQL服务正在运行
+sudo systemctl status mysql
+
 # 方法1：直接导入完整脚本
 mysql -u root -p < sql/hospital_complete_setup.sql
 
 # 方法2：在MySQL命令行中执行
 mysql -u root -p
 mysql> source sql/hospital_complete_setup.sql;
+
+# 方法3：指定数据库执行
+mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
 ```
 
 **包含的测试数据：**
@@ -198,6 +252,36 @@ mysql -u root -p hospital_db < sql/api_test_examples.sql
 ```bash
 # 快速创建基础测试环境
 mysql -u root -p < sql/quick_setup.sql
+```
+
+### 完整的测试流程
+
+```bash
+# 1. 安装MySQL
+sudo apt-get update
+sudo apt-get install mysql-server
+
+# 2. 启动MySQL服务
+sudo systemctl start mysql
+sudo systemctl enable mysql
+
+# 3. 登录MySQL并创建数据库
+mysql -u root -p
+CREATE DATABASE hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+EXIT;
+
+# 4. 导入完整测试数据
+mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
+
+# 5. 运行接口测试
+mysql -u root -p hospital_db < sql/api_test_examples.sql
+
+# 6. 验证数据
+mysql -u root -p hospital_db
+SHOW TABLES;
+SELECT COUNT(*) FROM users;
+SELECT COUNT(*) FROM doctors;
+SELECT COUNT(*) FROM patients;
 ```
 
 ### 测试数据验证
