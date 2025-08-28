@@ -333,9 +333,9 @@ mysql -u root -p hospital_db
 SHOW TABLES;
 SELECT COUNT(*) FROM users;
 SELECT COUNT(*) FROM doctors;
-SELECT COUNT(*) FROM patients;
-```
 
+```
+C
 ### 测试数据验证
 
 运行完整设置后，可以通过以下查询验证数据：
