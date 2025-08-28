@@ -304,7 +304,8 @@ mysql -u root -p < sql/quick_setup.sql
 
 ### 🎯 **选择建议**
 
-- **前端UI开发**：使用 `sql/clean_database_setup.sql`
+- **前端UI开发**：使用 `sql/clean_database_setup.sql` （**不需要运行API测试**）
+- **后端API开发**：使用 `sql/hospital_complete_setup.sql`
 - **API功能测试**：使用 `sql/hospital_complete_setup.sql` + `sql/api_test_examples.sql`
 - **快速验证**：使用 `sql/quick_setup.sql`
 
