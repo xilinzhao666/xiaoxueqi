@@ -142,25 +142,30 @@ sudo systemctl enable mysql
 # 检查MySQL服务状态
 sudo systemctl status mysql
 
-# 安全配置MySQL（可选但推荐）
-sudo mysql_secure_installation
-
-# 登录MySQL（注意是mysql命令，不是mysql-server）
-mysql -u root -p
-
-# 创建数据库
-CREATE DATABASE hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-# 创建用户（可选）
-CREATE USER 'hospital_user'@'localhost' IDENTIFIED BY 'password';
-GRANT ALL PRIVILEGES ON hospital_db.* TO 'hospital_user'@'localhost';
-FLUSH PRIVILEGES;
-
-# 退出MySQL
-EXIT;
+# 登录MySQL（如果不知道密码，使用sudo）
+sudo mysql -u root
+# 或者尝试：mysql -u root -p（密码为空时直接按回车）
 ```
 
 ### 常见问题解决
+
+#### 0. MySQL密码问题
+```bash
+# 如果不知道密码，按顺序尝试：
+
+# 方法1：使用sudo（最常见）
+sudo mysql -u root
+
+# 方法2：无密码登录
+mysql -u root
+
+# 方法3：空密码（按回车）
+mysql -u root -p
+
+# 成功登录后，可以设置密码：
+mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
+mysql> FLUSH PRIVILEGES;
+```
 
 #### 1. MySQL服务未启动
 ```bash

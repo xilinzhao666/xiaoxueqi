@@ -112,6 +112,101 @@ EXIT;
 mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
 ```
 
+## MySQL密码问题解决
+
+### 情况1：没有设置过密码
+
+如果您刚安装MySQL且没有设置过密码，尝试以下方法：
+
+```bash
+# 方法1：使用sudo（最常见）
+sudo mysql -u root
+
+# 方法2：直接登录（无密码）
+mysql -u root
+
+# 方法3：空密码登录
+mysql -u root -p
+# 当提示输入密码时，直接按回车键
+```
+
+### 情况2：忘记了密码
+
+如果您忘记了MySQL密码，可以重置：
+
+```bash
+# 1. 停止MySQL服务
+sudo systemctl stop mysql
+
+# 2. 以安全模式启动MySQL
+sudo mysqld_safe --skip-grant-tables &
+
+# 3. 无密码登录
+mysql -u root
+
+# 4. 在MySQL中重置密码
+mysql> USE mysql;
+mysql> UPDATE user SET authentication_string=PASSWORD('new_password') WHERE User='root';
+mysql> FLUSH PRIVILEGES;
+mysql> EXIT;
+
+# 5. 重启MySQL服务
+sudo systemctl restart mysql
+```
+
+### 情况3：Ubuntu默认配置
+
+在Ubuntu系统中，MySQL可能配置为只允许sudo用户访问：
+
+```bash
+# 使用sudo登录
+sudo mysql -u root
+
+# 然后设置密码
+mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
+mysql> FLUSH PRIVILEGES;
+mysql> EXIT;
+```
+
+### 快速测试方法
+
+按顺序尝试以下命令，直到成功登录：
+
+```bash
+# 1. 尝试sudo登录
+sudo mysql -u root
+
+# 2. 尝试无密码登录
+mysql -u root
+
+# 3. 尝试空密码
+mysql -u root -p
+# 提示输入密码时直接按回车
+
+# 4. 尝试常见默认密码
+mysql -u root -p
+# 尝试输入：root, password, 123456, admin
+```
+
+### 导入数据的替代方法
+
+如果密码问题暂时无法解决，可以使用以下方法：
+
+```bash
+# 方法1：使用sudo导入
+sudo mysql -u root hospital_db < sql/hospital_complete_setup.sql
+
+# 方法2：分步执行
+sudo mysql -u root -e "CREATE DATABASE IF NOT EXISTS hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+sudo mysql -u root hospital_db < sql/hospital_complete_setup.sql
+
+# 方法3：在MySQL命令行中执行
+sudo mysql -u root
+mysql> CREATE DATABASE IF NOT EXISTS hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+mysql> USE hospital_db;
+mysql> SOURCE /home/ada/桌面/share/sql/hospital_complete_setup.sql;
+```
+
 -- 退出
 EXIT;
 ```
