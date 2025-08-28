@@ -374,7 +374,7 @@ SELECT
     (SELECT COUNT(*) FROM prescriptions) AS total_prescriptions,
     (SELECT COUNT(*) FROM medications) AS total_medications;
 
--- 验证表关系
+-- 验证表关系（正确的SQL语法）
 SELECT 
     u.username,
     u.user_type,
@@ -382,7 +382,8 @@ SELECT
     COALESCE(d.department, '患者') AS department
 FROM users u
 LEFT JOIN doctors d ON u.user_id = d.user_id
-LEFT JOIN patients p ON u.user_id = p.user_id;
+LEFT JOIN patients p ON u.user_id = p.user_id
+ORDER BY u.user_type, u.user_id;
 ```
 
 ### 接口测试示例
