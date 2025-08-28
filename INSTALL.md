@@ -48,25 +48,69 @@ sudo mysql_secure_installation
 ### 4. 登录和创建数据库
 
 ```bash
-# 登录MySQL（注意命令是mysql，不是mysql-server）
+# 重要：登录MySQL的正确方法
+# 命令是 mysql，不是 mysql-server
 mysql -u root -p
 
-# 或者如果没有设置密码
+# 如果上面命令失败，尝试使用sudo
 sudo mysql -u root
 ```
 
-在MySQL命令行中：
+**重要**：只有看到 `mysql>` 提示符后，才能输入SQL命令：
+
 ```sql
+-- 在MySQL命令行中输入（注意前面有mysql>提示符）
+mysql> CREATE DATABASE hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 创建专用用户（可选）
+mysql> CREATE USER 'hospital_user'@'localhost' IDENTIFIED BY 'your_password';
+mysql> GRANT ALL PRIVILEGES ON hospital_db.* TO 'hospital_user'@'localhost';
+mysql> FLUSH PRIVILEGES;
+
+-- 查看数据库
+mysql> SHOW DATABASES;
+
+-- 退出MySQL
+mysql> EXIT;
+```
+
+### 5. 导入测试数据
+
+退出MySQL后，在系统命令行中执行：
+
+```bash
+# 导入完整测试数据
+mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
+
+# 验证导入成功
+mysql -u root -p hospital_db -e "SHOW TABLES; SELECT COUNT(*) FROM users;"
+```
+
+## 完整操作流程示例
+
+```bash
+# 1. 检查MySQL服务
+sudo systemctl status mysql
+
+# 2. 如果未运行，启动MySQL
+sudo systemctl start mysql
+
+# 3. 登录MySQL
+mysql -u root -p
+# 输入密码后，您会看到：
+# Welcome to the MySQL monitor...
+# mysql>
+
+# 4. 在mysql>提示符下创建数据库
 -- 创建数据库
 CREATE DATABASE hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- 创建专用用户（可选）
-CREATE USER 'hospital_user'@'localhost' IDENTIFIED BY 'your_password';
-GRANT ALL PRIVILEGES ON hospital_db.* TO 'hospital_user'@'localhost';
-FLUSH PRIVILEGES;
+-- 退出MySQL
+EXIT;
 
--- 查看数据库
-SHOW DATABASES;
+# 5. 回到系统命令行，导入数据
+mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
+```
 
 -- 退出
 EXIT;

@@ -203,17 +203,38 @@ FLUSH PRIVILEGES;
 包含完整的表结构、测试数据、视图和存储过程：
 
 ```bash
+# 重要：请按照以下步骤操作
+
+# 第一步：确保MySQL服务正在运行
+sudo systemctl status mysql
+
+# 如果MySQL未运行，启动它
+sudo systemctl start mysql
+
+# 第二步：登录MySQL（注意是mysql命令，不是mysql-server）
+mysql -u root -p
+# 或者如果没有设置密码
+sudo mysql -u root
+
+# 第三步：在MySQL命令行中创建数据库
+# 看到 mysql> 提示符后，输入以下命令：
+CREATE DATABASE hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+# 第四步：退出MySQL
+EXIT;
+
+# 第五步：导入完整脚本
+mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
+
+# 或者分步执行：
 # 确保MySQL服务正在运行
 sudo systemctl status mysql
 
-# 方法1：直接导入完整脚本
-mysql -u root -p < sql/hospital_complete_setup.sql
-
-# 方法2：在MySQL命令行中执行
+# 方法1：在MySQL命令行中执行
 mysql -u root -p
 mysql> source sql/hospital_complete_setup.sql;
 
-# 方法3：指定数据库执行
+# 方法2：指定数据库执行
 mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
 ```
 
