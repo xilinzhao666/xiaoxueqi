@@ -225,10 +225,25 @@ FLUSH PRIVILEGES;
 
 ### 快速搭建测试环境
 
-我们提供了三个SQL脚本来帮助您快速搭建测试环境：
+我们提供了四个SQL脚本来帮助您快速搭建测试环境：
 
-#### 1. **完整测试环境** (`sql/hospital_complete_setup.sql`)
+#### 1. **纯净数据库环境** (`sql/clean_database_setup.sql`) - **推荐用于前端UI**
+包含固定的基础测试数据，不会因API测试而改变：
+- **5个医生**（心内科、神经科、骨科、儿科、内科）
+- **8个患者**（不同性别、年龄）
+- **13个用户总数**（5医生 + 8患者）
+- 适用于前端UI界面查询，数据数量固定
+
+```bash
+# 导入纯净数据库（推荐用于前端开发）
+mysql -u root -p < sql/clean_database_setup.sql
+```
+
+#### 2. **完整测试环境** (`sql/hospital_complete_setup.sql`)
 包含完整的表结构、测试数据、视图和存储过程：
+- **6个医生**（包含API测试创建的医生）
+- **9个患者**（包含API测试创建的患者）
+- **15个用户总数**（6医生 + 9患者）
 
 ```bash
 # 重要：请按照以下步骤操作
@@ -269,42 +284,29 @@ cd /home/ada/桌面/share
 mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
 ```
 
-**包含的测试数据：**
-- 6个医生（涵盖心内科、神经科、骨科、儿科、内科、急诊科）
-- 9个患者（不同性别、年龄）
-- 8个病例（各科室典型病例）
-- 10个预约记录（不同状态）
-- 5个住院记录（不同病房）
-- 8个处方记录
-- 16个药物记录
-
-#### 2. **API接口测试** (`sql/api_test_examples.sql`)
+#### 3. **API接口测试** (`sql/api_test_examples.sql`)
 专门用于测试文档3.1-3.8接口的脚本：
+- **会动态创建新用户**（1个医生 + 1个患者）
+- **仅用于API功能测试**，不适合前端UI查询
 
 ```bash
 # 在完整环境基础上运行接口测试
 mysql -u root -p hospital_db < sql/api_test_examples.sql
 ```
 
-**测试内容：**
-- 用户管理接口测试（注册、登录、查询）
-- 医生管理接口测试（信息注册、查询、搜索）
-- 患者管理接口测试（信息注册、查询、搜索）
-- 病例管理接口测试（创建、查询）
-- 预约管理接口测试（创建、状态更新）
-- 住院管理接口测试（登记、查询）
-- 处方管理接口测试（开具、查询）
-- 药物管理接口测试（添加、查询）
-- 综合业务流程测试
-- 性能测试和错误处理测试
-
-#### 3. **快速验证环境** (`sql/quick_setup.sql`)
+#### 4. **快速验证环境** (`sql/quick_setup.sql`)
 最小化的测试环境，用于快速验证：
 
 ```bash
 # 快速创建基础测试环境
 mysql -u root -p < sql/quick_setup.sql
 ```
+
+### 🎯 **选择建议**
+
+- **前端UI开发**：使用 `sql/clean_database_setup.sql`
+- **API功能测试**：使用 `sql/hospital_complete_setup.sql` + `sql/api_test_examples.sql`
+- **快速验证**：使用 `sql/quick_setup.sql`
 
 ### 完整的测试流程
 
