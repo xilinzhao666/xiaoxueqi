@@ -18,7 +18,7 @@ OPENSSL_LIBS = -lssl -lcrypto
 LIBS = $(MYSQL_LIBS) $(OPENSSL_LIBS) -lpthread
 
 # Additional include paths
-INCLUDE_PATHS = -I$(INCDIR) -I/usr/include/mysql -I/usr/local/include/mysql
+INCLUDE_PATHS = -I$(INCDIR) -I/home/ada/桌面/share/include -I/usr/include/mysql -I/usr/local/include/mysql -I/usr/include/mysql++
 
 # Source files and object files
 SOURCES = $(wildcard $(SRCDIR)/*.cpp)

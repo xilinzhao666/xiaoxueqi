@@ -18,6 +18,7 @@ find_package(OpenSSL REQUIRED)
 # Include directories
 include_directories(include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(/home/ada/桌面/share/include)
 include_directories(${MYSQL_INCLUDE_DIRS})
 include_directories(${OPENSSL_INCLUDE_DIR})
 
@@ -25,6 +26,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 if(CMAKE_COMPILER_IS_GNUCXX)
     include_directories(/usr/include/mysql)
     include_directories(/usr/local/include/mysql)
+    include_directories(/usr/include/mysql++)
 endif()
 
 # Source files
