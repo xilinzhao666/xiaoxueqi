@@ -173,17 +173,17 @@ mysql> EXIT;
 按顺序尝试以下命令，直到成功登录：
 
 ```bash
+# 0. 如果提示输入密码，直接按回车键
+mysql -u root -p
+# 看到"Enter password:"时，直接按回车
+
 # 1. 尝试sudo登录
 sudo mysql -u root
 
 # 2. 尝试无密码登录
 mysql -u root
 
-# 3. 尝试空密码
-mysql -u root -p
-# 提示输入密码时直接按回车
-
-# 4. 尝试常见默认密码
+# 3. 尝试常见默认密码
 mysql -u root -p
 # 尝试输入：root, password, 123456, admin
 ```

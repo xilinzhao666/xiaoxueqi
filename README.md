@@ -118,6 +118,29 @@ prescriptions (1:N) medications
 
 ### Ubuntu/Debian 系统
 
+#### 🔑 **MySQL密码问题快速解决**
+
+如果您不知道MySQL密码，请按以下顺序尝试：
+
+```bash
+# 方法1：直接按回车（空密码）
+mysql -u root -p
+# 当提示"Enter password:"时，直接按回车键
+
+# 方法2：使用sudo登录（推荐）
+sudo mysql -u root
+
+# 方法3：无密码登录
+mysql -u root
+```
+
+**成功登录后，您可以设置密码：**
+```sql
+mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
+mysql> FLUSH PRIVILEGES;
+mysql> EXIT;
+```
+
 1. **安装依赖**:
 ```bash
 # 安装编译工具
