@@ -226,15 +226,18 @@ EXIT;
 # 第五步：导入完整脚本
 mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
 
-# 或者分步执行：
-# 确保MySQL服务正在运行
-sudo systemctl status mysql
+# 或者在MySQL命令行中执行（需要正确的文件路径）：
+# 方法1：使用绝对路径
+mysql -u root -p hospital_db
+mysql> source /home/ada/桌面/share/sql/hospital_complete_setup.sql;
 
-# 方法1：在MySQL命令行中执行
-mysql -u root -p
+# 方法2：先切换到项目目录
+cd /home/ada/桌面/share
+mysql -u root -p hospital_db
 mysql> source sql/hospital_complete_setup.sql;
 
-# 方法2：指定数据库执行
+# 方法3：使用系统命令行导入（推荐）
+cd /home/ada/桌面/share
 mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
 ```
 

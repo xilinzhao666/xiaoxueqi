@@ -202,6 +202,9 @@ mysql -u root -p -e "SHOW DATABASES;"
 
 ### 方法1：命令行导入
 ```bash
+# 重要：确保在正确的目录中
+cd /path/to/your/project  # 例如：cd /home/ada/桌面/share
+
 # 导入完整测试环境
 mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
 
@@ -211,6 +214,10 @@ mysql -u root -p hospital_db < sql/api_test_examples.sql
 
 ### 方法2：MySQL命令行内导入
 ```bash
+# 先切换到项目目录
+cd /home/ada/桌面/share
+
+# 然后登录MySQL
 mysql -u root -p
 ```
 
@@ -220,8 +227,21 @@ SOURCE sql/hospital_complete_setup.sql;
 SOURCE sql/api_test_examples.sql;
 ```
 
+### 方法3：使用绝对路径
+```bash
+mysql -u root -p hospital_db
+```
+
+```sql
+-- 使用完整路径（请替换为您的实际路径）
+SOURCE /home/ada/桌面/share/sql/hospital_complete_setup.sql;
+```
+
 ### 方法3：分步导入
 ```bash
+# 确保在项目目录中
+cd /home/ada/桌面/share
+
 # 1. 创建数据库
 mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
