@@ -50,8 +50,8 @@ mysql -u root -p hospital_db < sql/api_test_examples.sql
 
 ### **前端开发者**
 ```bash
-# 1. 导入纯净数据库
-mysql -u root -p < sql/clean_database_setup.sql
+# 1. 导入前端UI专用数据库（推荐）
+mysql -u root -p < sql/clean_database_for_frontend.sql
 
 # 2. 开始前端开发
 # 3. 享受一致的查询结果！
