@@ -1,4 +1,5 @@
 #include "User.h"
+#include <memory>
 #include <sstream>
 #include <iostream>
 #include <openssl/sha.h>

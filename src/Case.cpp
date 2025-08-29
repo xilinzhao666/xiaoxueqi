@@ -1,4 +1,5 @@
 #include "Case.h"
+#include <memory>
 #include <sstream>
 #include <iostream>
 

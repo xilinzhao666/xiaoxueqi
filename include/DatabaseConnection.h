@@ -1,12 +1,12 @@
 #ifndef DATABASE_CONNECTION_H
 #define DATABASE_CONNECTION_H
 
-#include <mysql/mysql.h>
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
 #include <mutex>
 #include <queue>
+#include <mysql/mysql.h>
 
 class DatabaseConnection {
 private:

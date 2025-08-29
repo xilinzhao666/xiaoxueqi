@@ -1,4 +1,5 @@
 #include "Appointment.h"
+#include <memory>
 #include <sstream>
 #include <iostream>
 

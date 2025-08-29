@@ -1,4 +1,5 @@
 #include "Medication.h"
+#include <memory>
 #include <sstream>
 #include <iostream>
 

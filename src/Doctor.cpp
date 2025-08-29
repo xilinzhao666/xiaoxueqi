@@ -1,4 +1,5 @@
 #include "Doctor.h"
+#include <memory>
 #include <sstream>
 #include <iostream>
 

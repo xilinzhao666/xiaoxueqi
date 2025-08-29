@@ -1,4 +1,5 @@
 #include "Patient.h"
+#include <memory>
 #include <sstream>
 #include <iostream>
 #include <ctime>

@@ -1,6 +1,9 @@
 #include "DatabaseConnection.h"
-#include <iostream>
+#include <memory>
 #include <stdexcept>
+#include <mutex>
+#include <queue>
+#include <iostream>
 
 DatabaseConnection::DatabaseConnection(const std::string& host, const std::string& username,
                                      const std::string& password, const std::string& database,

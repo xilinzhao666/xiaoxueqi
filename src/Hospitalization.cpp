@@ -1,4 +1,5 @@
 #include "Hospitalization.h"
+#include <memory>
 #include <sstream>
 #include <iostream>
 
