@@ -4,15 +4,25 @@
 #include <memory>
 #include "DatabaseConnection.h"
 #include "User.h"
-#include "Product.h"
-#include "Order.h"
+#include "Doctor.h"
+#include "Patient.h"
+#include "Case.h"
+#include "Appointment.h"
+#include "Hospitalization.h"
+#include "Prescription.h"
+#include "Medication.h"
 
 class DatabaseService {
 private:
     std::shared_ptr<ConnectionPool> connectionPool;
     std::unique_ptr<UserDAO> userDAO;
-    std::unique_ptr<ProductDAO> productDAO;
-    std::unique_ptr<OrderDAO> orderDAO;
+    std::unique_ptr<DoctorDAO> doctorDAO;
+    std::unique_ptr<PatientDAO> patientDAO;
+    std::unique_ptr<CaseDAO> caseDAO;
+    std::unique_ptr<AppointmentDAO> appointmentDAO;
+    std::unique_ptr<HospitalizationDAO> hospitalizationDAO;
+    std::unique_ptr<PrescriptionDAO> prescriptionDAO;
+    std::unique_ptr<MedicationDAO> medicationDAO;
     
 public:
     DatabaseService(const std::string& host, const std::string& username,
@@ -20,56 +30,99 @@ public:
                    unsigned int port = 3306, size_t maxConnections = 10);
     ~DatabaseService();
     
-    // 初始化数据库
+    // Initialize database
     bool initializeDatabase();
     bool createTables();
     bool dropTables();
     
-    // 获取DAO实例
+    // Get DAO instances
     UserDAO* getUserDAO() { return userDAO.get(); }
-    ProductDAO* getProductDAO() { return productDAO.get(); }
-    OrderDAO* getOrderDAO() { return orderDAO.get(); }
+    DoctorDAO* getDoctorDAO() { return doctorDAO.get(); }
+    PatientDAO* getPatientDAO() { return patientDAO.get(); }
+    CaseDAO* getCaseDAO() { return caseDAO.get(); }
+    AppointmentDAO* getAppointmentDAO() { return appointmentDAO.get(); }
+    HospitalizationDAO* getHospitalizationDAO() { return hospitalizationDAO.get(); }
+    PrescriptionDAO* getPrescriptionDAO() { return prescriptionDAO.get(); }
+    MedicationDAO* getMedicationDAO() { return medicationDAO.get(); }
     
-    // 业务逻辑方法
-    bool registerUser(const std::string& username, const std::string& email, 
-                     const std::string& password, const std::string& firstName = "",
-                     const std::string& lastName = "", const std::string& phone = "");
+    // Business logic methods
+    bool registerUser(const std::string& username, const std::string& password, 
+                     UserType userType, const std::string& email = "", 
+                     const std::string& phoneNumber = "");
     
     std::unique_ptr<User> loginUser(const std::string& username, const std::string& password);
     
-    bool createProduct(const std::string& name, const std::string& description,
-                      double price, int categoryId, int stockQuantity = 0);
+    bool registerDoctor(int userId, const std::string& name, const std::string& department, 
+                       const std::string& workingHours, const std::string& title = "");
     
-    int placeOrder(int userId, const std::vector<std::pair<int, int>>& productQuantities,
-                   const std::string& shippingAddress, const std::string& billingAddress,
-                   const std::string& paymentMethod = "");
+    bool registerPatient(int userId, const std::string& name, Gender gender, 
+                        const std::string& birthDate, const std::string& idNumber, 
+                        const std::string& phoneNumber = "");
     
-    bool processOrderPayment(int orderId, const std::string& paymentMethod);
-    bool fulfillOrder(int orderId, const std::string& trackingNumber = "");
+    int createMedicalCase(int patientId, const std::string& department, int doctorId, 
+                         const std::string& diagnosis);
     
-    // 统计和报告
+    int bookAppointment(int patientId, int doctorId, const std::string& appointmentTime, 
+                       const std::string& department);
+    
+    int admitPatient(int patientId, const std::string& wardNumber, const std::string& bedNumber, 
+                    const std::string& attendingDoctor);
+    
+    int issuePrescription(int caseId, int doctorId, const std::string& prescriptionContent);
+    
+    bool addMedication(int prescriptionId, const std::string& medicationName, int quantity, 
+                      const std::string& usageInstructions);
+    
+    // Statistics and reports
     struct DatabaseStats {
         int totalUsers;
-        int activeUsers;
-        int totalProducts;
-        int activeProducts;
-        int totalOrders;
-        int pendingOrders;
-        double totalRevenue;
-        int lowStockProducts;
+        int totalDoctors;
+        int totalPatients;
+        int totalCases;
+        int totalAppointments;
+        int bookedAppointments;
+        int attendedAppointments;
+        int cancelledAppointments;
+        int totalHospitalizations;
+        int totalPrescriptions;
+        int totalMedications;
     };
     
     DatabaseStats getDatabaseStats();
     
-    // 数据维护
+    // Complex queries with joins
+    struct PatientCaseInfo {
+        int patientId;
+        std::string patientName;
+        std::string idNumber;
+        int caseId;
+        std::string diagnosis;
+        std::string diagnosisDate;
+        std::string doctorName;
+        std::string department;
+    };
+    
+    std::vector<PatientCaseInfo> getPatientCaseHistory(int patientId);
+    
+    struct DoctorAppointmentInfo {
+        int doctorId;
+        std::string doctorName;
+        std::string department;
+        int appointmentId;
+        std::string patientName;
+        std::string appointmentTime;
+        std::string status;
+    };
+    
+    std::vector<DoctorAppointmentInfo> getDoctorAppointments(int doctorId);
+    
+    // Data maintenance
     bool backupDatabase(const std::string& backupPath);
     bool optimizeTables();
     bool cleanupOldData(int daysOld = 365);
     
 private:
     std::string hashPassword(const std::string& password);
-    bool validateEmail(const std::string& email);
-    bool validateUsername(const std::string& username);
 };
 
 #endif // DATABASE_SERVICE_H

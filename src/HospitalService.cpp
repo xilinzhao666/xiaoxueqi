@@ -224,7 +224,7 @@ bool HospitalService::registerUser(const std::string& username, const std::strin
     
     User user(username, password, userType);
     user.setEmail(email);
-    user.setPhoneNumber(phoneNumber);
+    user.setPhone(phoneNumber);
     
     return userDAO->createUser(user);
 }
