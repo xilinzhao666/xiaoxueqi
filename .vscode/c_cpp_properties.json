@@ -6,6 +6,7 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/include",
                 "/home/ada/桌面/share/include",
+                "/home/ada/桌面/share/src",
                 "/usr/include/mysql",
                 "/usr/include/mysql++",
                 "/usr/include/openssl",

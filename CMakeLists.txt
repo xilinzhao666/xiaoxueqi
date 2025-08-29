@@ -14,7 +14,22 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 # Include directories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/qt/include)
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/qt/include
+    /home/ada/桌面/share/include
+)
+
+# Find MySQL
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(MYSQL REQUIRED mysqlclient)
+
+# Find OpenSSL
+find_package(OpenSSL REQUIRED)
+
+# Add include directories
+include_directories(${MYSQL_INCLUDE_DIRS})
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 # Qt source files
 set(QT_SOURCES
