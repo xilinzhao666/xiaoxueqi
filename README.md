@@ -176,6 +176,16 @@ sudo mysql -u root
 
 ### 常见问题解决
 
+#### 0. 头文件路径错误
+```bash
+# 如果遇到 #include 错误，运行修复脚本
+chmod +x compile_fix.sh
+./compile_fix.sh
+
+# 或手动安装依赖
+sudo apt-get install build-essential cmake libmysqlclient-dev libssl-dev pkg-config
+```
+
 #### 0. MySQL密码问题
 ```bash
 # 如果不知道密码，按顺序尝试：
