@@ -10,6 +10,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -std=c++17")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -DNDEBUG")
 
+# Force use of g++ compiler
+set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+set(CMAKE_C_COMPILER "/usr/bin/gcc")
+
 # Find required packages
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(MYSQL REQUIRED mysqlclient)

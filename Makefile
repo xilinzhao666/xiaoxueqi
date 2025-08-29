@@ -1,7 +1,7 @@
 # Makefile for Hospital Management System
 
 # Compiler settings
-CXX = g++
+CXX = /usr/bin/g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -Wpedantic -O2 -I$(INCDIR)
 DEBUGFLAGS = -g -O0 -DDEBUG
 

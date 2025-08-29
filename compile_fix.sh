@@ -100,7 +100,8 @@ echo "6. 编译失败，提供诊断信息..."
 
 echo "系统信息："
 echo "- 操作系统: $(uname -a)"
-echo "- 编译器版本: $(g++ --version | head -1)"
+echo "- GCC版本: $(gcc --version | head -1)"
+echo "- G++版本: $(g++ --version | head -1)"
 echo "- CMake版本: $(cmake --version | head -1)"
 echo "- MySQL配置: $(mysql_config --version 2>/dev/null || echo '未找到')"
 
