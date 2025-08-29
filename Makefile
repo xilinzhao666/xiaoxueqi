@@ -83,4 +83,3 @@ help:
 
 # Declare phony targets
 .PHONY: all debug clean install-deps create-db run help directories
-)

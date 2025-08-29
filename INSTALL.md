@@ -51,6 +51,7 @@ sudo mysql_secure_installation
 # 重要：登录MySQL的正确方法
 # 命令是 mysql，不是 mysql-server
 mysql -u root -p
+pwd: zxl20050601
 
 # 如果上面命令失败，尝试使用sudo
 sudo mysql -u root
@@ -64,6 +65,7 @@ mysql> CREATE DATABASE hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode
 
 -- 创建专用用户（可选）
 mysql> CREATE USER 'hospital_user'@'localhost' IDENTIFIED BY 'your_password';
+For test, usr: wyt, pwd:20030609.
 mysql> GRANT ALL PRIVILEGES ON hospital_db.* TO 'hospital_user'@'localhost';
 mysql> FLUSH PRIVILEGES;
 
