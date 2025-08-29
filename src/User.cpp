@@ -7,8 +7,12 @@
 // User class implementation
 User::User() : userId(0), userType(UserType::PATIENT), isActive(true) {}
 
-User::User(const std::string& username, const std::string& email, const std::string& passwordHash)
-    : userId(0), username(username), email(email), passwordHash(passwordHash), userType(UserType::PATIENT), isActive(true) {}
+User::User(const std::string& username, const std::string& password, UserType userType)
+    : userId(0), username(username), userType(userType), isActive(true) {
+    // Use the private hashPassword method from UserDAO class
+    // For now, we'll set a placeholder - the actual hashing will be done in UserDAO
+    this->passwordHash = password; // This will be properly hashed when stored via UserDAO
+}
 
 std::string User::userTypeToString() const {
     switch (userType) {
@@ -18,9 +22,12 @@ std::string User::userTypeToString() const {
     return "Patient";
 }
 
+UserType User::stringToUserType(const std::string& typeStr) {
+    if (typeStr == "Doctor") return UserType::DOCTOR;
+    return UserType::PATIENT;
+}
+
 bool User::validatePassword(const std::string& password) const {
-    // This would typically hash the input password and compare with stored hash
-    // For now, just a placeholder implementation
     return !password.empty() && password.length() >= 6;
 }
 
@@ -31,10 +38,13 @@ bool UserDAO::createUser(const User& user) {
     auto conn = connectionPool->getConnection();
     if (!conn) return false;
     
+    // Hash the password before storing
+    std::string hashedPassword = hashPassword(user.getPasswordHash());
+    
     std::stringstream query;
     query << "INSERT INTO users (username, password, user_type, email, phone_number) VALUES ("
           << "'" << conn->escapeString(user.getUsername()) << "', "
-          << "'" << conn->escapeString(user.getPasswordHash()) << "', "
+          << "'" << conn->escapeString(hashedPassword) << "', "
           << "'" << user.userTypeToString() << "', "
           << (user.getEmail().empty() ? "NULL" : "'" + conn->escapeString(user.getEmail()) + "'") << ", "
           << (user.getPhoneNumber().empty() ? "NULL" : "'" + conn->escapeString(user.getPhoneNumber()) + "'") << ")";
@@ -205,18 +215,32 @@ bool UserDAO::deleteUser(int userId) {
 }
 
 bool UserDAO::deactivateUser(int userId) {
-    // Not implemented in current schema
-    return true;
+    return setUserActiveStatus(userId, false);
 }
 
 bool UserDAO::activateUser(int userId) {
-    // Not implemented in current schema
-    return true;
+    return setUserActiveStatus(userId, true);
+}
+
+bool UserDAO::setUserActiveStatus(int userId, bool isActive) {
+    auto conn = connectionPool->getConnection();
+    if (!conn) return false;
+    
+    // Since the current schema doesn't have is_active column, we'll simulate it
+    // by updating a status field or using a soft delete approach
+    // For now, we'll add a comment to the user record to indicate status
+    std::stringstream query;
+    query << "UPDATE users SET phone_number = CONCAT(COALESCE(phone_number, ''), "
+          << (isActive ? "' [ACTIVE]'" : "' [INACTIVE]'") << ") WHERE user_id = " << userId;
+    
+    bool result = conn->executeUpdate(query.str());
+    connectionPool->returnConnection(std::move(conn));
+    return result;
 }
 
 std::unique_ptr<User> UserDAO::authenticateUser(const std::string& username, const std::string& password) {
     auto user = getUserByUsername(username);
-    if (user && user->getPasswordHash() == password) {
+    if (user && verifyPassword(password, user->getPasswordHash())) {
         return user;
     }
     return nullptr;
@@ -224,15 +248,16 @@ std::unique_ptr<User> UserDAO::authenticateUser(const std::string& username, con
 
 bool UserDAO::changePassword(int userId, const std::string& oldPassword, const std::string& newPassword) {
     auto user = getUserById(userId);
-    if (!user || user->getPasswordHash() != oldPassword) {
+    if (!user || !verifyPassword(oldPassword, user->getPasswordHash())) {
         return false;
     }
     
     auto conn = connectionPool->getConnection();
     if (!conn) return false;
     
+    std::string hashedNewPassword = hashPassword(newPassword);
     std::stringstream query;
-    query << "UPDATE users SET password = '" << conn->escapeString(newPassword) 
+    query << "UPDATE users SET password = '" << conn->escapeString(hashedNewPassword) 
           << "' WHERE user_id = " << userId;
     
     bool result = conn->executeUpdate(query.str());
@@ -331,10 +356,25 @@ User* UserDAO::mapRowToUser(MYSQL_ROW row, unsigned long* lengths) {
     if (row[2]) user->setPasswordHash(std::string(row[2], lengths[2]));
     if (row[3]) {
         std::string typeStr = std::string(row[3], lengths[3]);
-        user->setUserType(typeStr == "Doctor" ? UserType::DOCTOR : UserType::PATIENT);
+        user->setUserType(User::stringToUserType(typeStr));
     }
     if (row[4]) user->setEmail(std::string(row[4], lengths[4]));
-    if (row[5]) user->setPhoneNumber(std::string(row[5], lengths[5]));
+    if (row[5]) {
+        std::string phone = std::string(row[5], lengths[5]);
+        // Check if user is active based on phone number status markers
+        bool isActive = phone.find("[INACTIVE]") == std::string::npos;
+        user->setIsActive(isActive);
+        
+        // Clean up the phone number by removing status markers
+        size_t activePos = phone.find(" [ACTIVE]");
+        size_t inactivePos = phone.find(" [INACTIVE]");
+        if (activePos != std::string::npos) {
+            phone = phone.substr(0, activePos);
+        } else if (inactivePos != std::string::npos) {
+            phone = phone.substr(0, inactivePos);
+        }
+        user->setPhoneNumber(phone);
+    }
     if (row[6]) user->setCreatedAt(std::string(row[6], lengths[6]));
     
     return user;

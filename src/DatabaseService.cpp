@@ -222,8 +222,8 @@ bool DatabaseService::registerUser(const std::string& username, const std::strin
         return false;
     }
     
-    User user(username, email, password);
-    user.setUserType(userType);
+    User user(username, password, userType);
+    user.setEmail(email);
     user.setPhoneNumber(phoneNumber);
     
     return userDAO->createUser(user);
@@ -480,12 +480,20 @@ bool DatabaseService::backupDatabase(const std::string& backupPath) {
     auto conn = connectionPool->getConnection();
     if (!conn) return false;
     
-    // This should implement database backup logic
-    // Can use mysqldump command or MySQL backup API
-    std::cout << "Database backup functionality not implemented yet." << std::endl;
+    // Implement database backup using mysqldump command
+    std::string command = "mysqldump -h localhost -u root hospital_db > " + backupPath;
+    
+    // Execute the backup command
+    int result = system(command.c_str());
+    
+    if (result == 0) {
+        std::cout << "Database backup completed successfully to: " << backupPath << std::endl;
+    } else {
+        std::cerr << "Database backup failed. Error code: " << result << std::endl;
+    }
     
     connectionPool->returnConnection(std::move(conn));
-    return false;
+    return result == 0;
 }
 
 bool DatabaseService::optimizeTables() {
