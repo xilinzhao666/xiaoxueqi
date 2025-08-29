@@ -95,6 +95,58 @@ if [ -f "CMakeLists.txt" ]; then
     fi
 fi
 
+# 方法3：手动编译（如果Make和CMake都失败）
+echo "尝试手动编译..."
+
+# 检查源文件是否存在
+if [ ! -d "src" ]; then
+    echo "❌ src目录不存在"
+    exit 1
+fi
+
+# 检查是否有.cpp文件
+CPP_FILES=$(find src -name "*.cpp" 2>/dev/null)
+if [ -z "$CPP_FILES" ]; then
+    echo "❌ src目录中没有找到.cpp文件"
+    exit 1
+fi
+
+echo "找到的源文件:"
+echo "$CPP_FILES"
+
+# 创建目录
+mkdir -p obj bin
+
+# 获取MySQL配置
+MYSQL_CFLAGS=$(mysql_config --cflags 2>/dev/null || echo "-I/usr/include/mysql")
+MYSQL_LIBS=$(mysql_config --libs 2>/dev/null || echo "-lmysqlclient")
+
+echo "MySQL编译标志: $MYSQL_CFLAGS"
+echo "MySQL链接库: $MYSQL_LIBS"
+
+# 编译每个源文件
+echo "编译源文件..."
+for cpp_file in $CPP_FILES; do
+    obj_file="obj/$(basename ${cpp_file%.cpp}.o)"
+    echo "编译 $cpp_file -> $obj_file"
+    
+    if ! g++ -std=c++17 -Wall -Wextra -I./include -I/home/ada/桌面/share/include $MYSQL_CFLAGS -c "$cpp_file" -o "$obj_file"; then
+        echo "❌ 编译 $cpp_file 失败"
+        exit 1
+    fi
+done
+
+# 链接生成可执行文件
+echo "链接生成可执行文件..."
+if g++ obj/*.o -o bin/HospitalSystem $MYSQL_LIBS -lssl -lcrypto -lpthread; then
+    echo "✅ 手动编译成功！"
+    echo "运行程序: ./bin/HospitalSystem"
+    exit 0
+else
+    echo "❌ 链接失败"
+    exit 1
+fi
+
 # 5. 如果都失败，提供诊断信息
 echo "6. 编译失败，提供诊断信息..."
 
