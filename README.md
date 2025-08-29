@@ -126,17 +126,9 @@ prescriptions (1:N) medications
 
 如果您不知道MySQL密码，请按以下顺序尝试：
 
-```bash
-# 方法1：直接按回车（空密码）
-mysql -u root -p
-# 当提示"Enter password:"时，直接按回车键
-
-# 方法2：使用sudo登录（推荐）
+使用sudo登录（推荐）
 sudo mysql -u root
 
-# 方法3：无密码登录
-mysql -u root
-```
 
 **成功登录后，您可以设置密码：**
 ```sql
@@ -171,59 +163,13 @@ sudo systemctl status mysql
 
 # 登录MySQL（如果不知道密码，使用sudo）
 sudo mysql -u root
-# 或者尝试：mysql -u root -p（密码为空时直接按回车）
-```
 
 ### 常见问题解决
 
-#### 0. 头文件路径错误
-```bash
-# 如果遇到 #include 错误，运行修复脚本
-chmod +x compile_fix.sh
-./compile_fix.sh
 
-# 或手动安装依赖
-sudo apt-get install build-essential cmake libmysqlclient-dev libssl-dev pkg-config
-```
 
-#### 0. MySQL密码问题
-```bash
-# 如果不知道密码，按顺序尝试：
 
-# 方法1：使用sudo（最常见）
-sudo mysql -u root
 
-# 方法2：无密码登录
-mysql -u root
-
-# 方法3：空密码（按回车）
-mysql -u root -p
-
-# 成功登录后，可以设置密码：
-mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
-mysql> FLUSH PRIVILEGES;
-```
-
-#### 1. MySQL服务未启动
-```bash
-# 检查MySQL服务状态
-sudo systemctl status mysql
-
-# 如果未运行，启动服务
-sudo systemctl start mysql
-
-# 如果启动失败，查看日志
-sudo journalctl -u mysql.service
-```
-
-#### 2. 无法连接MySQL
-```bash
-# 检查MySQL是否在监听端口
-sudo netstat -tlnp | grep :3306
-
-# 或使用ss命令
-sudo ss -tlnp | grep :3306
-```
 
 #### 3. 权限问题
 ```bash
