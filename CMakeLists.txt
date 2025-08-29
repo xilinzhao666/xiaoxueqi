@@ -13,14 +13,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-# Find MySQL (optional, using Qt SQL drivers instead)
-find_package(PkgConfig QUIET)
-if(PkgConfig_FOUND)
-    pkg_check_modules(MYSQL QUIET mysqlclient)
-endif()
-
 # Include directories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/qt/include)
 
 # Qt source files
@@ -48,17 +41,6 @@ set(QT_HEADERS
     qt/include/CaseManagementWidget.h
     qt/include/DatabaseManager.h
     qt/include/HospitalBusinessLogic.h
-)
-
-# Qt UI files
-set(QT_UI_FILES
-    qt/ui/MainWindow.ui
-    qt/ui/LoginDialog.ui
-    qt/ui/UserRegistrationDialog.ui
-    qt/ui/DoctorManagementWidget.ui
-    qt/ui/PatientManagementWidget.ui
-    qt/ui/AppointmentWidget.ui
-    qt/ui/CaseManagementWidget.ui
 )
 
 # Create executable

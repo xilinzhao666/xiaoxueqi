@@ -4,11 +4,13 @@
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQuery>
 #include <QtSql/QSqlError>
+#include <QtSql/QSqlRecord>
 #include <QObject>
 #include <QString>
 #include <QVariant>
 #include <QList>
 #include <QMap>
+#include <QDebug>
 #include <memory>
 
 // Database connection configuration
@@ -42,6 +44,13 @@ public:
     void setError(const QString& error) { errorMessage = error; }
     void setData(const QList<QMap<QString, QVariant>>& d) { data = d; }
     void addRow(const QMap<QString, QVariant>& row) { data.append(row); }
+    
+    // Convenience methods
+    bool isEmpty() const { return data.isEmpty(); }
+    int rowCount() const { return data.size(); }
+    QMap<QString, QVariant> firstRow() const { 
+        return data.isEmpty() ? QMap<QString, QVariant>() : data.first(); 
+    }
 };
 
 class DatabaseManager : public QObject {
@@ -85,13 +94,15 @@ public:
     void setConfig(const DatabaseConfig& config) { this->config = config; }
     DatabaseConfig getConfig() const { return config; }
     
+    // Test connection
+    bool testConnection();
+    
 signals:
     void connectionStatusChanged(bool connected);
     void errorOccurred(const QString& error);
     
 private:
     void setupDatabase();
-    QMap<QString, QVariant> bindParameters(QSqlQuery& query, const QMap<QString, QVariant>& params);
     QString generateConnectionName();
 };
 
