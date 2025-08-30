@@ -15,6 +15,11 @@ BINDIR = bin
 MYSQL_CFLAGS = $(shell mysql_config --cflags)
 MYSQL_LIBS = $(shell mysql_config --libs)
 OPENSSL_LIBS = -lssl -lcrypto
+
+# 检查nlohmann/json库的位置
+JSON_INCLUDE = $(shell pkg-config --cflags nlohmann_json 2>/dev/null || echo "-I/usr/include/nlohmann")
+CXXFLAGS += $(JSON_INCLUDE)
+
 LIBS = $(MYSQL_LIBS) $(OPENSSL_LIBS) -lpthread
 
 # Source files and object files
@@ -57,6 +62,7 @@ install-deps:
 	sudo apt-get install -y build-essential cmake
 	sudo apt-get install -y libmysqlclient-dev mysql-server
 	sudo apt-get install -y libssl-dev
+	sudo apt-get install -y nlohmann-json3-dev
 	@echo "Dependencies installed!"
 
 # Create database
@@ -70,6 +76,11 @@ run: $(TARGET)
 	@echo "Running $(TARGET)..."
 	@./$(TARGET)
 
+# Run with API server functionality
+run-api: $(TARGET)
+	@echo "Running $(TARGET) with API functionality..."
+	@./$(TARGET)
+
 # Help
 help:
 	@echo "Available targets:"
@@ -79,7 +90,8 @@ help:
 	@echo "  install-deps - Install required dependencies (Ubuntu/Debian)"
 	@echo "  create-db    - Create MySQL database"
 	@echo "  run          - Build and run the program"
+	@echo "  run-api      - Build and run API server"
 	@echo "  help         - Show this help message"
 
 # Declare phony targets
-.PHONY: all debug clean install-deps create-db run help directories
+.PHONY: all debug clean install-deps create-db run run-api help directories

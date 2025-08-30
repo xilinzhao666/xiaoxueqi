@@ -1,21 +1,47 @@
 cmake_minimum_required(VERSION 3.10)
 project(HospitalManagementSystem)
 
-# Set C++ standard
+# 设置C++标准
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find required packages
+# 设置编译选项
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -O2")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -DDEBUG")
+
+# 查找依赖库
 find_package(PkgConfig REQUIRED)
+
+# MySQL
 pkg_check_modules(MYSQL REQUIRED mysqlclient)
+
+# OpenSSL
 find_package(OpenSSL REQUIRED)
 
-# Include directories
-include_directories(include)
-include_directories(${MYSQL_INCLUDE_DIRS})
-include_directories(${OPENSSL_INCLUDE_DIR})
+# Threads
+find_package(Threads REQUIRED)
 
-# Source files
+# 包含目录
+include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${MYSQL_INCLUDE_DIRS})
+
+# 添加nlohmann/json库（如果系统没有安装，可以作为子模块添加）
+find_package(nlohmann_json 3.2.0 QUIET)
+if(NOT nlohmann_json_FOUND)
+    # 如果没有找到，尝试使用pkg-config
+    pkg_check_modules(NLOHMANN_JSON nlohmann_json)
+    if(NOT NLOHMANN_JSON_FOUND)
+        message(WARNING "nlohmann/json not found. Please install it manually.")
+        # 可以添加FetchContent来自动下载
+        include(FetchContent)
+        FetchContent_Declare(json
+            GIT_REPOSITORY https://github.com/nlohmann/json.git
+            GIT_TAG v3.11.2)
+        FetchContent_MakeAvailable(json)
+    endif()
+endif()
+
+# 源文件
 set(SOURCES
     src/DatabaseConnection.cpp
     src/User.cpp
@@ -27,30 +53,49 @@ set(SOURCES
     src/Prescription.cpp
     src/Medication.cpp
     src/HospitalService.cpp
-    src/main.cpp
+    src/ApiHandler.cpp
 )
 
-# Create executable
-add_executable(${PROJECT_NAME} ${SOURCES})
+# 创建库
+add_library(HospitalLib ${SOURCES})
 
-# Link libraries
-target_link_libraries(${PROJECT_NAME} 
+# 链接库到HospitalLib
+target_link_libraries(HospitalLib 
     ${MYSQL_LIBRARIES}
-    ${OPENSSL_LIBRARIES}
-    pthread
+    OpenSSL::SSL 
+    OpenSSL::Crypto
+    Threads::Threads
 )
 
-# Compile options
-target_compile_options(${PROJECT_NAME} PRIVATE ${MYSQL_CFLAGS_OTHER})
-
-# Compiler warnings
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
+if(nlohmann_json_FOUND)
+    target_link_libraries(HospitalLib nlohmann_json::nlohmann_json)
+else()
+    target_link_libraries(HospitalLib nlohmann_json)
 endif()
 
-# Debug mode options
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_options(${PROJECT_NAME} PRIVATE -g -O0)
-else()
-    target_compile_options(${PROJECT_NAME} PRIVATE -O2)
+# 主程序可执行文件
+add_executable(HospitalSystem src/main.cpp)
+target_link_libraries(HospitalSystem HospitalLib)
+
+# API服务器可执行文件
+add_executable(ApiServer src/ApiServer.cpp)
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+set_target_properties(ApiServer PROPERTIES
+install(TARGETS HospitalSystem
+    RUNTIME DESTINATION bin
+)
+
+install(TARGETS HospitalLib
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
+
+# 测试（可选）
+enable_testing()
+
+# 如果有测试文件
+if(EXISTS ${CMAKE_SOURCE_DIR}/tests)
+    add_subdirectory(tests)
 endif()
