@@ -1,0 +1,6 @@
+{
+  "api": "patient.medicalRecord.list",
+  "data": {
+    "token": "patient_token_123456"
+  }
+}

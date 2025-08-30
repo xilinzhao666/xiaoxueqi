@@ -1,0 +1,6 @@
+{
+  "api": "public.doctor.get",
+  "data": {
+    "doctorId": "invalid_doctor_id"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "api": "public.schedule.list",
+  "data": {
+    "departmentId": "dept_cardiology_123",
+    "date": "2025-09-10",
+    "doctorName": "李"
+  }
+}

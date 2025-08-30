@@ -1,0 +1,6 @@
+{
+  "api": "patient.consultation.requestOnline",
+  "data": {
+    "token": "patient_token_123456"
+  }
+}

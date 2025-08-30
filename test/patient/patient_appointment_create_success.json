@@ -1,0 +1,8 @@
+{
+  "api": "patient.appointment.create",
+  "data": {
+    "token": "patient_token_123456",
+    "scheduleId": "sched_12345",
+    "timeSlot": "09:00-09:30"
+  }
+}

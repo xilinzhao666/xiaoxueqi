@@ -1,0 +1,6 @@
+{
+  "api": "patient.auth.login",
+  "data": {
+    "password": "hashed_password_string"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "api": "patient.auth.register",
+  "data": {
+    "email": "newpatient@example.com",
+    "password": "securePassword123",
+    "verificationCode": "123456"
+  }
+}

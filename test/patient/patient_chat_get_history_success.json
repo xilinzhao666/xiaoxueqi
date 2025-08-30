@@ -1,0 +1,8 @@
+{
+  "api": "patient.chat.getHistory",
+  "data": {
+    "token": "patient_token_123456",
+    "doctorId": "doc_67890",
+    "lastMessageId": "msg_123"
+  }
+}

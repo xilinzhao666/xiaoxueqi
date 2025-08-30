@@ -1,0 +1,9 @@
+{
+  "api": "doctor.labResult.upload",
+  "data": {
+    "token": "doctor_token_67890",
+    "patientId": "pat_123456",
+    "reportName": "血常规报告",
+    "fileContentBase64": "invalid_base64_content!!!"
+  }
+}

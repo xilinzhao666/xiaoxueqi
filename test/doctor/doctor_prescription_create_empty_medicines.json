@@ -1,0 +1,9 @@
+{
+  "api": "doctor.prescription.create",
+  "data": {
+    "token": "doctor_token_67890",
+    "patientId": "pat_123456",
+    "appointmentId": "appt_abcde",
+    "medicines": []
+  }
+}

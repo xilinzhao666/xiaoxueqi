@@ -1,0 +1,7 @@
+{
+  "api": "doctor.leaveRequest.cancel",
+  "data": {
+    "token": "doctor_token_67890",
+    "requestId": "leave_req_123"
+  }
+}

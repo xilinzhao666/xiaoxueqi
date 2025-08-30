@@ -1,0 +1,8 @@
+{
+  "api": "patient.chat.sendMessage",
+  "data": {
+    "token": "patient_token_123456",
+    "doctorId": "doc_67890",
+    "content": "李医生您好，请问我上次开的药吃完后还需要复诊吗？"
+  }
+}

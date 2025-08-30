@@ -1,0 +1,7 @@
+{
+  "api": "doctor.auth.login",
+  "data": {
+    "employeeId": "DOC10086",
+    "password": "hashed_password_string"
+  }
+}

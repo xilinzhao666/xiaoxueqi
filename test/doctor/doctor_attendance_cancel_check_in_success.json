@@ -1,0 +1,6 @@
+{
+  "api": "doctor.attendance.cancelCheckIn",
+  "data": {
+    "token": "doctor_token_67890"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "api": "doctor.prescription.create",
+  "data": {
+    "token": "doctor_token_67890",
+    "patientId": "pat_123456",
+    "appointmentId": "appt_abcde",
+    "medicines": [
+      {
+        "name": "XX胶囊",
+        "dosage": "0.5g",
+        "frequency": "每日三次",
+        "quantity": 1
+      }
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "api": "doctor.profile.get",
+  "data": {
+    "token": "doctor_token_67890"
+  }
+}

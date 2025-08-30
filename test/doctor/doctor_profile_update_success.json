@@ -1,0 +1,8 @@
+{
+  "api": "doctor.profile.update",
+  "data": {
+    "token": "doctor_token_67890",
+    "bio": "更新了个人简介，擅长治疗心血管疾病",
+    "registrationFee": 60.0
+  }
+}

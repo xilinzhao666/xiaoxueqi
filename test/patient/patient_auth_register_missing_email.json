@@ -1,0 +1,7 @@
+{
+  "api": "patient.auth.register",
+  "data": {
+    "password": "securePassword123",
+    "verificationCode": "123456"
+  }
+}

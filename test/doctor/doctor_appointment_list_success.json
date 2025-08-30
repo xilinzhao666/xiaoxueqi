@@ -1,0 +1,7 @@
+{
+  "api": "doctor.appointment.list",
+  "data": {
+    "token": "doctor_token_67890",
+    "date": "2025-09-10"
+  }
+}

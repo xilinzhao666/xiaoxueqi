@@ -1,0 +1,7 @@
+{
+  "api": "patient.prescription.get",
+  "data": {
+    "token": "patient_token_123456",
+    "prescriptionId": "presc_xyz"
+  }
+}

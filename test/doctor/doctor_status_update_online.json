@@ -1,0 +1,7 @@
+{
+  "api": "doctor.status.update",
+  "data": {
+    "token": "doctor_token_67890",
+    "status": "online"
+  }
+}

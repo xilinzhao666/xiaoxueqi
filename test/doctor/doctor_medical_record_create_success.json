@@ -1,0 +1,10 @@
+{
+  "api": "doctor.medicalRecord.create",
+  "data": {
+    "token": "doctor_token_67890",
+    "patientId": "pat_123456",
+    "appointmentId": "appt_abcde",
+    "diagnosis": "急性上呼吸道感染",
+    "doctorAdvice": "多喝水，注意休息，口服XX胶囊。"
+  }
+}

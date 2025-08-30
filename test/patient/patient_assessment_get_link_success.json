@@ -1,0 +1,6 @@
+{
+  "api": "patient.assessment.getLink",
+  "data": {
+    "token": "patient_token_123456"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "api": "doctor.patient.getMedicalRecords",
+  "data": {
+    "token": "doctor_token_67890",
+    "patientId": "invalid_patient_id"
+  }
+}
