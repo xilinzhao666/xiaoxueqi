@@ -84,6 +84,10 @@ private:
     ApiResponse handlePatientPrescriptionList(const json& data);
     ApiResponse handlePatientPrescriptionGet(const json& data);
     ApiResponse handlePatientLabResultList(const json& data);
+    ApiResponse handlePatientChatSendMessage(const json& data);
+    ApiResponse handlePatientChatGetHistory(const json& data);
+    ApiResponse handlePatientAssessmentGetLink(const json& data);
+    ApiResponse handlePatientConsultationRequestOnline(const json& data);
     
     // 医生端接口处理函数
     ApiResponse handleDoctorLogin(const json& data);
@@ -100,6 +104,8 @@ private:
     ApiResponse handleDoctorLeaveRequestSubmit(const json& data);
     ApiResponse handleDoctorLeaveRequestList(const json& data);
     ApiResponse handleDoctorLeaveRequestCancel(const json& data);
+    ApiResponse handleDoctorStatusUpdate(const json& data);
+    ApiResponse handleDoctorAttendanceCancelCheckIn(const json& data);
     
     // 工具函数
     std::string hashPassword(const std::string& password);

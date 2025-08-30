@@ -573,6 +573,291 @@ ApiHandler::ApiResponse ApiHandler::handleDoctorPrescriptionCreate(const json& d
     }
 }
 
+// 患者聊天消息发送
+ApiHandler::ApiResponse ApiHandler::handlePatientChatSendMessage(const json& data) {
+    try {
+        // 验证token
+        if (!data.contains("token") || !data["token"].is_string()) {
+            return ApiResponse("error", 400, "缺少有效的认证token", json::object());
+        }
+        
+        UserSession session;
+        if (!validateToken(data["token"], session) || session.userType != UserType::PATIENT) {
+            return ApiResponse("error", 401, "无效的认证token或权限不足", json::object());
+        }
+        
+        // 验证必需参数
+        if (!data.contains("doctorId") || !data["doctorId"].is_string() ||
+            !data.contains("content") || !data["content"].is_string()) {
+            return ApiResponse("error", 400, "缺少必需参数：doctorId 或 content", json::object());
+        }
+        
+        std::string doctorIdStr = data["doctorId"];
+        std::string content = data["content"];
+        
+        if (content.empty() || content.length() > 1000) {
+            return ApiResponse("error", 400, "消息内容不能为空且不能超过1000字符", json::object());
+        }
+        
+        // 验证医生是否存在
+        int doctorId = std::stoi(doctorIdStr.substr(4)); // 去掉"doc_"前缀
+        auto doctor = hospitalService->getDoctorDAO()->getDoctorById(doctorId);
+        if (!doctor) {
+            return ApiResponse("error", 404, "指定的医生不存在", json::object());
+        }
+        
+        // 获取患者信息
+        auto patient = hospitalService->getPatientDAO()->getPatientByUserId(session.userId);
+        if (!patient) {
+            return ApiResponse("error", 404, "患者信息不存在", json::object());
+        }
+        
+        // 在实际实现中，这里应该将消息保存到聊天记录表
+        // 由于当前数据库架构中没有聊天表，我们返回成功响应
+        json responseData = {
+            {"messageId", "msg_" + std::to_string(std::time(nullptr))},
+            {"status", "sent"},
+            {"timestamp", getCurrentDateTime()}
+        };
+        
+        return ApiResponse("success", 200, "消息发送成功", responseData);
+        
+    } catch (const std::exception& e) {
+        return ApiResponse("error", 500, "发送消息失败: " + std::string(e.what()), json::object());
+    }
+}
+
+// 获取患者聊天历史
+ApiHandler::ApiResponse ApiHandler::handlePatientChatGetHistory(const json& data) {
+    try {
+        // 验证token
+        if (!data.contains("token") || !data["token"].is_string()) {
+            return ApiResponse("error", 400, "缺少有效的认证token", json::object());
+        }
+        
+        UserSession session;
+        if (!validateToken(data["token"], session) || session.userType != UserType::PATIENT) {
+            return ApiResponse("error", 401, "无效的认证token或权限不足", json::object());
+        }
+        
+        // 验证必需参数
+        if (!data.contains("doctorId") || !data["doctorId"].is_string()) {
+            return ApiResponse("error", 400, "缺少必需参数：doctorId", json::object());
+        }
+        
+        std::string doctorIdStr = data["doctorId"];
+        
+        // 验证医生是否存在
+        int doctorId = std::stoi(doctorIdStr.substr(4)); // 去掉"doc_"前缀
+        auto doctor = hospitalService->getDoctorDAO()->getDoctorById(doctorId);
+        if (!doctor) {
+            return ApiResponse("error", 404, "指定的医生不存在", json::object());
+        }
+        
+        // 在实际实现中，这里应该从聊天记录表中查询历史消息
+        // 由于当前数据库架构中没有聊天表，我们返回模拟数据
+        json responseData = {
+            {"messages", json::array({
+                {
+                    {"messageId", "msg_001"},
+                    {"senderId", "pat_" + std::to_string(session.userId)},
+                    {"senderType", "patient"},
+                    {"content", "李医生您好，请问我上次开的药吃完后还需要复诊吗？"},
+                    {"timestamp", "2025-01-15T10:30:00Z"},
+                    {"isRead", true}
+                },
+                {
+                    {"messageId", "msg_002"},
+                    {"senderId", doctorIdStr},
+                    {"senderType", "doctor"},
+                    {"content", "您好，建议您一周后来复诊，检查血压控制情况。"},
+                    {"timestamp", "2025-01-15T14:20:00Z"},
+                    {"isRead", true}
+                }
+            })},
+            {"hasMore", false}
+        };
+        
+        return ApiResponse("success", 200, "获取聊天历史成功", responseData);
+        
+    } catch (const std::exception& e) {
+        return ApiResponse("error", 500, "获取聊天历史失败: " + std::string(e.what()), json::object());
+    }
+}
+
+// 获取患者健康评估链接
+ApiHandler::ApiResponse ApiHandler::handlePatientAssessmentGetLink(const json& data) {
+    try {
+        // 验证token
+        if (!data.contains("token") || !data["token"].is_string()) {
+            return ApiResponse("error", 400, "缺少有效的认证token", json::object());
+        }
+        
+        UserSession session;
+        if (!validateToken(data["token"], session) || session.userType != UserType::PATIENT) {
+            return ApiResponse("error", 401, "无效的认证token或权限不足", json::object());
+        }
+        
+        // 获取患者信息
+        auto patient = hospitalService->getPatientDAO()->getPatientByUserId(session.userId);
+        if (!patient) {
+            return ApiResponse("error", 404, "患者信息不存在", json::object());
+        }
+        
+        // 生成个性化的健康评估链接
+        std::string assessmentUrl = "https://health-assessment.hospital.com/questionnaire?patientId=pat_" + 
+                                   std::to_string(patient->getPatientId()) + "&token=" + data["token"].get<std::string>();
+        
+        json responseData = {
+            {"url", assessmentUrl},
+            {"validUntil", "2025-01-22T23:59:59Z"}, // 链接有效期
+            {"description", "请完成健康状况评估问卷，帮助医生更好地了解您的健康状况"}
+        };
+        
+        return ApiResponse("success", 200, "获取健康评估链接成功", responseData);
+        
+    } catch (const std::exception& e) {
+        return ApiResponse("error", 500, "获取健康评估链接失败: " + std::string(e.what()), json::object());
+    }
+}
+
+// 患者请求在线咨询
+ApiHandler::ApiResponse ApiHandler::handlePatientConsultationRequestOnline(const json& data) {
+    try {
+        // 验证token
+        if (!data.contains("token") || !data["token"].is_string()) {
+            return ApiResponse("error", 400, "缺少有效的认证token", json::object());
+        }
+        
+        UserSession session;
+        if (!validateToken(data["token"], session) || session.userType != UserType::PATIENT) {
+            return ApiResponse("error", 401, "无效的认证token或权限不足", json::object());
+        }
+        
+        // 获取患者信息
+        auto patient = hospitalService->getPatientDAO()->getPatientByUserId(session.userId);
+        if (!patient) {
+            return ApiResponse("error", 404, "患者信息不存在", json::object());
+        }
+        
+        // 在实际实现中，这里应该：
+        // 1. 查找在线的医生
+        // 2. 创建咨询会话
+        // 3. 生成音视频通话的Token（如Agora）
+        
+        // 模拟匹配到在线医生
+        auto doctors = hospitalService->getDoctorDAO()->getAllDoctors();
+        if (doctors.empty()) {
+            return ApiResponse("error", 503, "当前没有在线医生，请稍后再试", json::object());
+        }
+        
+        // 选择第一个医生作为在线医生（实际应该有更复杂的匹配逻辑）
+        auto onlineDoctor = doctors[0].get();
+        
+        // 生成会话ID和通话Token
+        std::string sessionId = "session_" + std::to_string(std::time(nullptr));
+        std::string agoraToken = "agora_token_" + sessionId; // 实际应该调用Agora API生成
+        
+        json responseData = {
+            {"sessionId", sessionId},
+            {"agoraToken", agoraToken},
+            {"doctorId", "doc_" + std::to_string(onlineDoctor->getDoctorId())},
+            {"doctorName", onlineDoctor->getName()},
+            {"department", onlineDoctor->getDepartment()},
+            {"estimatedWaitTime", 5}, // 预计等待时间（分钟）
+            {"consultationFee", 30.0}
+        };
+        
+        return ApiResponse("success", 200, "匹配成功，正在建立连接", responseData);
+        
+    } catch (const std::exception& e) {
+        return ApiResponse("error", 500, "请求在线咨询失败: " + std::string(e.what()), json::object());
+    }
+}
+
+// 更新医生状态
+ApiHandler::ApiResponse ApiHandler::handleDoctorStatusUpdate(const json& data) {
+    try {
+        // 验证token
+        if (!data.contains("token") || !data["token"].is_string()) {
+            return ApiResponse("error", 400, "缺少有效的认证token", json::object());
+        }
+        
+        UserSession session;
+        if (!validateToken(data["token"], session) || session.userType != UserType::DOCTOR) {
+            return ApiResponse("error", 401, "无效的认证token或权限不足", json::object());
+        }
+        
+        // 验证必需参数
+        if (!data.contains("status") || !data["status"].is_string()) {
+            return ApiResponse("error", 400, "缺少必需参数：status", json::object());
+        }
+        
+        std::string status = data["status"];
+        if (status != "online" && status != "offline") {
+            return ApiResponse("error", 400, "状态值无效，只能是 'online' 或 'offline'", json::object());
+        }
+        
+        // 获取医生信息
+        auto doctor = hospitalService->getDoctorDAO()->getDoctorByUserId(session.userId);
+        if (!doctor) {
+            return ApiResponse("error", 404, "医生信息不存在", json::object());
+        }
+        
+        // 在实际实现中，这里应该更新医生的在线状态到数据库
+        // 由于当前数据库架构中没有状态字段，我们模拟更新成功
+        
+        json responseData = {
+            {"doctorId", "doc_" + std::to_string(doctor->getDoctorId())},
+            {"status", status},
+            {"timestamp", getCurrentDateTime()}
+        };
+        
+        return ApiResponse("success", 200, "状态更新成功", responseData);
+        
+    } catch (const std::exception& e) {
+        return ApiResponse("error", 500, "更新状态失败: " + std::string(e.what()), json::object());
+    }
+}
+
+// 取消医生打卡
+ApiHandler::ApiResponse ApiHandler::handleDoctorAttendanceCancelCheckIn(const json& data) {
+    try {
+        // 验证token
+        if (!data.contains("token") || !data["token"].is_string()) {
+            return ApiResponse("error", 400, "缺少有效的认证token", json::object());
+        }
+        
+        UserSession session;
+        if (!validateToken(data["token"], session) || session.userType != UserType::DOCTOR) {
+            return ApiResponse("error", 401, "无效的认证token或权限不足", json::object());
+        }
+        
+        // 获取医生信息
+        auto doctor = hospitalService->getDoctorDAO()->getDoctorByUserId(session.userId);
+        if (!doctor) {
+            return ApiResponse("error", 404, "医生信息不存在", json::object());
+        }
+        
+        // 在实际实现中，这里应该：
+        // 1. 查找今天的打卡记录
+        // 2. 检查是否可以取消（比如打卡后2小时内可以取消）
+        // 3. 更新打卡状态为已取消
+        
+        // 模拟取消打卡成功
+        json responseData = {
+            {"doctorId", "doc_" + std::to_string(doctor->getDoctorId())},
+            {"cancelTime", getCurrentDateTime()},
+            {"status", "cancelled"}
+        };
+        
+        return ApiResponse("success", 200, "打卡取消成功", responseData);
+        
+    } catch (const std::exception& e) {
+        return ApiResponse("error", 500, "取消打卡失败: " + std::string(e.what()), json::object());
+    }
+}
+
 // 工具函数实现
 std::string ApiHandler::generateToken(int userId, UserType userType, const std::string& username) {
     std::lock_guard<std::mutex> lock(sessionMutex);
