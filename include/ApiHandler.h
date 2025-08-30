@@ -66,8 +66,8 @@ private:
     // 输入验证
     bool validateEmail(const std::string& email);
     bool validatePhone(const std::string& phone);
-    bool validateIdNumber(const std::string& idNumber);
     bool validatePassword(const std::string& password);
+    bool validateIdNumber(const std::string& idNumber);
     
     // 公共接口处理函数
     ApiResponse handlePublicScheduleList(const json& data);
