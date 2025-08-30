@@ -18,11 +18,21 @@ MYSQL_CFLAGS = $(shell mysql_config --cflags 2>/dev/null || echo "-I/usr/include
 MYSQL_LIBS = $(shell mysql_config --libs 2>/dev/null || echo "-lmysqlclient")
 OPENSSL_LIBS = -lssl -lcrypto
 
+# 静态链接选项
+ifdef STATIC
+    MYSQL_LIBS = $(shell mysql_config --libs_r 2>/dev/null || echo "-lmysqlclient -static-libgcc")
+    CXXFLAGS += -static-libgcc
+    LDFLAGS += -static-libgcc
+endif
+
 # 检查nlohmann/json库的位置
 JSON_INCLUDE = $(shell pkg-config --cflags nlohmann_json 2>/dev/null || echo "-I/usr/include")
 CXXFLAGS += $(JSON_INCLUDE)
 
 LIBS = $(MYSQL_LIBS) $(OPENSSL_LIBS) -lpthread
+
+# 链接标志
+LDFLAGS += -Wl,-rpath,/usr/lib/x86_64-linux-gnu -Wl,-rpath,/usr/local/lib
 
 # 共享源文件（不包含main函数的文件）
 SHARED_SOURCES = $(SRCDIR)/DatabaseConnection.cpp \
@@ -64,13 +74,13 @@ $(SHARED_LIB): $(SHARED_OBJECTS)
 # Terminal可执行文件 - 终端交互模式
 $(TERMINAL_TARGET): $(SHARED_LIB) $(OBJDIR)/main.o
 	@echo "链接Terminal可执行文件 $@..."
-	@$(CXX) $(OBJDIR)/main.o -L$(LIBDIR) -lhospital $(LIBS) -o $@
+	@$(CXX) $(LDFLAGS) $(OBJDIR)/main.o -L$(LIBDIR) -lhospital $(LIBS) -o $@
 	@echo "Terminal编译完成!"
 
 # JsonAPI可执行文件 - JSON文件处理模式
 $(JSONAPI_TARGET): $(SHARED_LIB) $(OBJDIR)/JsonAPI.o
 	@echo "链接JsonAPI可执行文件 $@..."
-	@$(CXX) $(OBJDIR)/JsonAPI.o -L$(LIBDIR) -lhospital $(LIBS) -o $@
+	@$(CXX) $(LDFLAGS) $(OBJDIR)/JsonAPI.o -L$(LIBDIR) -lhospital $(LIBS) -o $@
 	@echo "JsonAPI编译完成!"
 
 # 编译共享源文件的对象文件
@@ -94,6 +104,11 @@ terminal: directories $(TERMINAL_TARGET)
 
 jsonapi: directories $(JSONAPI_TARGET)
 	@echo "JsonAPI可执行文件编译完成: $(JSONAPI_TARGET)"
+
+# 静态链接版本
+static: STATIC=1
+static: clean all
+	@echo "静态链接版本编译完成!"
 
 # 调试版本
 debug: CXXFLAGS += $(DEBUGFLAGS)
@@ -125,14 +140,22 @@ create-db:
 # 运行Terminal程序
 run-terminal: $(TERMINAL_TARGET)
 	@echo "启动Terminal程序..."
-	@./$(TERMINAL_TARGET)
+	@chmod +x scripts/run_terminal.sh
+	@./scripts/run_terminal.sh
+
+# 运行JsonAPI程序
+run-jsonapi: $(JSONAPI_TARGET)
+	@echo "启动JsonAPI程序..."
+	@chmod +x scripts/run_jsonapi.sh
+	@echo "用法: ./scripts/run_jsonapi.sh --input <输入文件> --output <输出文件>"
 
 # 测试JsonAPI功能
 test-jsonapi: $(JSONAPI_TARGET)
 	@echo "测试JsonAPI功能..."
 	@mkdir -p test_results
 	@echo '{"api": "public.schedule.list", "data": {}}' > test_results/test_input.json
-	@./$(JSONAPI_TARGET) --input test_results/test_input.json --output test_results/test_output.json
+	@chmod +x scripts/run_jsonapi.sh
+	@./scripts/run_jsonapi.sh --input test_results/test_input.json --output test_results/test_output.json
 	@echo "测试请求:"
 	@cat test_results/test_input.json
 	@echo ""
