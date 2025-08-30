@@ -9,9 +9,10 @@ DEBUGFLAGS = -g -O0 -DDEBUG
 # 目录设置
 SRCDIR = src
 INCDIR = include
-OBJDIR = obj
-BINDIR = bin
-LIBDIR = lib
+BUILDDIR = build
+OBJDIR = $(BUILDDIR)/obj
+BINDIR = $(BUILDDIR)/bin
+LIBDIR = $(BUILDDIR)/lib
 
 # 库设置
 MYSQL_CFLAGS = $(shell mysql_config --cflags 2>/dev/null || echo "-I/usr/include/mysql")
@@ -63,7 +64,7 @@ all: directories $(TERMINAL_TARGET) $(JSONAPI_TARGET)
 
 # 创建必要的目录
 directories:
-	@mkdir -p $(OBJDIR) $(BINDIR) $(LIBDIR)
+	@mkdir -p $(BUILDDIR) $(OBJDIR) $(BINDIR) $(LIBDIR)
 
 # 编译共享库
 $(SHARED_LIB): $(SHARED_OBJECTS)
@@ -117,7 +118,7 @@ debug: directories $(TERMINAL_TARGET) $(JSONAPI_TARGET)
 # 清理编译文件
 clean:
 	@echo "清理编译文件..."
-	@rm -rf $(OBJDIR) $(BINDIR) $(LIBDIR)
+	@rm -rf $(BUILDDIR)
 	@rm -f test_results/*.json 2>/dev/null || true
 	@echo "清理完成!"
 
@@ -138,29 +139,26 @@ create-db:
 	@echo "数据库创建完成!"
 
 # 运行Terminal程序
-run-terminal: $(TERMINAL_TARGET)
+run-terminal: terminal
 	@echo "启动Terminal程序..."
-	@chmod +x scripts/run_terminal.sh
-	@./scripts/run_terminal.sh
+	@$(TERMINAL_TARGET)
 
 # 运行JsonAPI程序
-run-jsonapi: $(JSONAPI_TARGET)
+run-jsonapi: jsonapi
 	@echo "启动JsonAPI程序..."
-	@chmod +x scripts/run_jsonapi.sh
-	@echo "用法: ./scripts/run_jsonapi.sh --input <输入文件> --output <输出文件>"
+	@echo "用法: $(JSONAPI_TARGET) --input <输入文件> --output <输出文件>"
 
 # 测试JsonAPI功能
 test-jsonapi: $(JSONAPI_TARGET)
 	@echo "测试JsonAPI功能..."
-	@mkdir -p test_results
-	@echo '{"api": "public.schedule.list", "data": {}}' > test_results/test_input.json
-	@chmod +x scripts/run_jsonapi.sh
-	@./scripts/run_jsonapi.sh --input test_results/test_input.json --output test_results/test_output.json
+	@mkdir -p $(BUILDDIR)/test_results
+	@echo '{"api": "public.schedule.list", "data": {}}' > $(BUILDDIR)/test_results/test_input.json
+	@$(JSONAPI_TARGET) --input $(BUILDDIR)/test_results/test_input.json --output $(BUILDDIR)/test_results/test_output.json
 	@echo "测试请求:"
-	@cat test_results/test_input.json
+	@cat $(BUILDDIR)/test_results/test_input.json
 	@echo ""
 	@echo "测试响应:"
-	@cat test_results/test_output.json
+	@cat $(BUILDDIR)/test_results/test_output.json
 	@echo ""
 
 # 运行完整的JsonAPI测试套件
@@ -183,15 +181,12 @@ help:
 	@echo "  create-db        - 创建MySQL数据库"
 	@echo ""
 	@echo "运行和测试:"
-	@echo "  run-terminal     - 编译并运行Terminal程序"
+	@echo "  run-terminal     - 运行Terminal程序"
 	@echo "  test-jsonapi     - 编译并测试JsonAPI基本功能"
-	@echo "  test-jsonapi-full- 运行完整JsonAPI测试套件"
 	@echo "  help             - 显示此帮助信息"
 	@echo ""
 	@echo "使用示例:"
 	@echo "  make all                    # 编译所有程序"
-	@echo "  make terminal && make run-terminal  # 编译并运行Terminal"
-	@echo "  make jsonapi && make test-jsonapi   # 编译并测试JsonAPI"
 
 # 声明伪目标
 .PHONY: all terminal jsonapi debug clean install-deps create-db run-terminal test-jsonapi test-jsonapi-full help directories
