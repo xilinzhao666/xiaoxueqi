@@ -1,162 +1,6 @@
 #include <iostream>
 #include <memory>
-#include <vector>
-#include <thread>
-#include <atomic>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <cstring>
-#include <signal.h>
 #include "HospitalService.h"
-#include "ApiHandler.h"
-
-// 全局变量用于控制服务器状态
-std::atomic<bool> serverRunning{false};
-std::unique_ptr<std::thread> apiServerThread;
-
-class IntegratedApiServer {
-private:
-    std::shared_ptr<ApiHandler> apiHandler;
-    int serverSocket;
-    std::vector<std::thread> clientThreads;
-    
-    void handleClient(int clientSocket) {
-        char buffer[4096];
-        
-        while (serverRunning) {
-            memset(buffer, 0, sizeof(buffer));
-            ssize_t bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-            
-            if (bytesReceived <= 0) {
-                std::cout << "[API] 客户端断开连接" << std::endl;
-                break;
-            }
-            
-            std::string request(buffer, bytesReceived);
-            std::cout << "[API] 收到请求: " << request << std::endl;
-            
-            // 处理API请求
-            std::string response = apiHandler->processApiRequest(request);
-            
-            // 发送响应
-            send(clientSocket, response.c_str(), response.length(), 0);
-            std::cout << "[API] 发送响应: " << response << std::endl;
-        }
-        
-        close(clientSocket);
-    }
-    
-public:
-    IntegratedApiServer(std::shared_ptr<HospitalService> hospitalService, int port = 8080) {
-        apiHandler = std::make_shared<ApiHandler>(hospitalService);
-        
-        // 创建socket
-        serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-        if (serverSocket == -1) {
-            throw std::runtime_error("创建socket失败");
-        }
-        
-        // 设置socket选项
-        int opt = 1;
-        setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-        
-        // 绑定地址
-        sockaddr_in serverAddr{};
-        serverAddr.sin_family = AF_INET;
-        serverAddr.sin_addr.s_addr = INADDR_ANY;
-        serverAddr.sin_port = htons(port);
-        
-        if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
-            close(serverSocket);
-            throw std::runtime_error("绑定端口失败: " + std::to_string(port));
-        }
-        
-        std::cout << "[API] API服务器初始化完成，端口: " << port << std::endl;
-    }
-    
-    ~IntegratedApiServer() {
-        stop();
-    }
-    
-    void start() {
-        if (listen(serverSocket, 10) < 0) {
-            throw std::runtime_error("监听socket失败");
-        }
-        
-        std::cout << "[API] API服务器启动，等待连接..." << std::endl;
-        
-        while (serverRunning) {
-            sockaddr_in clientAddr{};
-            socklen_t clientAddrLen = sizeof(clientAddr);
-            
-            int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientAddrLen);
-            if (clientSocket < 0) {
-                if (serverRunning) {
-                    std::cerr << "[API] 接受客户端连接失败" << std::endl;
-                }
-                continue;
-            }
-            
-            std::cout << "[API] 新客户端连接" << std::endl;
-            
-            // 为每个客户端创建处理线程
-            clientThreads.emplace_back(&IntegratedApiServer::handleClient, this, clientSocket);
-        }
-    }
-    
-    void stop() {
-        serverRunning = false;
-        
-        if (serverSocket != -1) {
-            close(serverSocket);
-            serverSocket = -1;
-        }
-        
-        // 等待所有客户端线程结束
-        for (auto& thread : clientThreads) {
-            if (thread.joinable()) {
-                thread.join();
-            }
-        }
-        clientThreads.clear();
-        
-        std::cout << "[API] API服务器已停止" << std::endl;
-    }
-    
-    // 测试API功能
-    void testApi() {
-        std::cout << "\n=== API接口功能测试 ===" << std::endl;
-        
-        // 测试公共接口
-        std::string testRequest1 = R"({"api": "public.schedule.list", "data": {}})";
-        std::cout << "测试请求: " << testRequest1 << std::endl;
-        std::cout << "响应: " << apiHandler->processApiRequest(testRequest1) << std::endl;
-        
-        // 测试患者注册
-        std::string testRequest2 = R"({"api": "patient.auth.register", "data": {"email": "test@example.com", "password": "123456"}})";
-        std::cout << "\n测试请求: " << testRequest2 << std::endl;
-        std::cout << "响应: " << apiHandler->processApiRequest(testRequest2) << std::endl;
-        
-        // 测试医生登录
-        std::string testRequest3 = R"({"api": "doctor.auth.login", "data": {"employeeId": "DOC1", "password": "123456"}})";
-        std::cout << "\n测试请求: " << testRequest3 << std::endl;
-        std::cout << "响应: " << apiHandler->processApiRequest(testRequest3) << std::endl;
-        
-        // 测试无效API
-        std::string testRequest4 = R"({"api": "invalid.api", "data": {}})";
-        std::cout << "\n测试请求: " << testRequest4 << std::endl;
-        std::cout << "响应: " << apiHandler->processApiRequest(testRequest4) << std::endl;
-    }
-};
-
-// 信号处理函数
-void signalHandler(int signal) {
-    if (signal == SIGINT || signal == SIGTERM) {
-        std::cout << "\n[系统] 收到退出信号，正在关闭服务器..." << std::endl;
-        serverRunning = false;
-    }
-}
 
 void printMenu() {
     std::cout << "\n=== 医院管理系统 ===" << std::endl;
@@ -174,9 +18,6 @@ void printMenu() {
     std::cout << "12. 查看医生预约" << std::endl;
     std::cout << "13. 查看系统统计" << std::endl;
     std::cout << "14. 搜索功能" << std::endl;
-    std::cout << "15. 启动API服务器" << std::endl;
-    std::cout << "16. 停止API服务器" << std::endl;
-    std::cout << "17. 测试API功能" << std::endl;
     std::cout << "0. 退出" << std::endl;
     std::cout << "请选择操作: ";
 }
@@ -246,10 +87,6 @@ void printAppointment(const Appointment& appointment) {
 int main() {
     std::cout << "=== C++ MySQL 医院管理系统 ===" << std::endl;
     
-    // 设置信号处理
-    signal(SIGINT, signalHandler);
-    signal(SIGTERM, signalHandler);
-    
     // Database connection configuration
     std::string host = "localhost";
     std::string username = "root";
@@ -278,9 +115,6 @@ int main() {
         // 初始化医院服务
         auto hospitalService = std::make_shared<HospitalService>(host, username, password, database);
         
-        // 初始化API服务器（但不启动）
-        std::unique_ptr<IntegratedApiServer> apiServer;
-        
         int choice;
         while (true) {
             printMenu();
@@ -290,15 +124,6 @@ int main() {
             switch (choice) {
                 case 0: {
                     std::cout << "正在关闭系统..." << std::endl;
-                    
-                    // 停止API服务器
-                    if (serverRunning) {
-                        serverRunning = false;
-                        if (apiServerThread && apiServerThread->joinable()) {
-                            apiServerThread->join();
-                        }
-                    }
-                    
                     std::cout << "感谢使用医院管理系统！再见！" << std::endl;
                     return 0;
                 }
@@ -619,65 +444,6 @@ int main() {
                             std::cout << "无效的搜索类型！" << std::endl;
                             break;
                     }
-                    break;
-                }
-                
-                case 15: {
-                    if (serverRunning) {
-                        std::cout << "API服务器已在运行中！" << std::endl;
-                        break;
-                    }
-                    
-                    try {
-                        apiServer = std::make_unique<IntegratedApiServer>(hospitalService, 8080);
-                        serverRunning = true;
-                        
-                        // 在新线程中启动API服务器
-                        apiServerThread = std::make_unique<std::thread>([&apiServer]() {
-                            try {
-                                apiServer->start();
-                            } catch (const std::exception& e) {
-                                std::cerr << "[API] 服务器启动失败: " << e.what() << std::endl;
-                                serverRunning = false;
-                            }
-                        });
-                        
-                        std::cout << "API服务器启动成功！端口: 8080" << std::endl;
-                        std::cout << "可以使用以下命令测试:" << std::endl;
-                        std::cout << "echo '{\"api\": \"public.schedule.list\", \"data\": {}}' | nc localhost 8080" << std::endl;
-                        
-                    } catch (const std::exception& e) {
-                        std::cerr << "API服务器启动失败: " << e.what() << std::endl;
-                        serverRunning = false;
-                    }
-                    break;
-                }
-                
-                case 16: {
-                    if (!serverRunning) {
-                        std::cout << "API服务器未运行！" << std::endl;
-                        break;
-                    }
-                    
-                    std::cout << "正在停止API服务器..." << std::endl;
-                    serverRunning = false;
-                    
-                    if (apiServerThread && apiServerThread->joinable()) {
-                        apiServerThread->join();
-                    }
-                    
-                    apiServer.reset();
-                    std::cout << "API服务器已停止！" << std::endl;
-                    break;
-                }
-                
-                case 17: {
-                    if (!apiServer) {
-                        apiServer = std::make_unique<IntegratedApiServer>(hospitalService, 8080);
-                    }
-                    
-                    std::cout << "正在测试API功能..." << std::endl;
-                    apiServer->testApi();
                     break;
                 }
                 

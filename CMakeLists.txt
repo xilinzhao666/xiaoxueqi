@@ -74,16 +74,23 @@ else()
 endif()
 
 # 主程序可执行文件
-add_executable(HospitalSystem src/main.cpp)
-target_link_libraries(HospitalSystem HospitalLib)
+add_executable(Terminal src/main.cpp)
+target_link_libraries(Terminal HospitalLib)
 
-# API服务器可执行文件
-add_executable(ApiServer src/ApiServer.cpp)
+# JSON API可执行文件
+add_executable(JsonAPI src/JsonAPI.cpp)
+target_link_libraries(JsonAPI HospitalLib)
+
+# 设置输出目录
+set_target_properties(Terminal PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-set_target_properties(ApiServer PROPERTIES
-install(TARGETS HospitalSystem
+set_target_properties(JsonAPI PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+install(TARGETS Terminal JsonAPI
     RUNTIME DESTINATION bin
 )
 
