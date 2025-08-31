@@ -1,713 +1,547 @@
-# 医院管理系统 C++ MySQL 数据库
+# 智慧医疗管理系统 (Hospital Management System)
 
-基于提供的数据库架构文档构建的完整医院管理系统，使用C++和MySQL实现。
+一个基于C++和MySQL的现代化医院管理系统，支持患者挂号、医生诊疗、病历管理等核心医疗业务功能。系统提供两种运行模式：终端交互模式和JSON API模式。
 
-## 数据库架构
+## 📋 目录
 
-### 表结构
+- [项目概述](#项目概述)
+- [文件结构](#文件结构)
+- [功能特性](#功能特性)
+- [系统要求](#系统要求)
+- [部署说明](#部署说明)
+- [接口文档](#接口文档)
+- [运行说明](#运行说明)
+- [测试方法](#测试方法)
+- [开发指南](#开发指南)
 
-根据提供的架构文档，系统包含以下8个核心表：
+## 🏥 项目概述
 
-1. **users** - 用户账户表（医生和患者）
-2. **doctors** - 医生详细信息表
-3. **patients** - 患者个人信息表
-4. **cases** - 患者病例信息表
-5. **appointments** - 患者预约记录表
-6. **hospitalization** - 患者住院记录表
-7. **prescriptions** - 医生开具的处方表
-8. **medications** - 处方药物表
+智慧医疗管理系统是一个全功能的医院信息管理平台，支持：
 
-### 表关系
+- **患者端功能**：注册登录、个人信息管理、预约挂号、查看病历、处方管理、医患沟通等
+- **医生端功能**：登录认证、患者管理、诊断开方、检验报告、考勤管理、请假管理等
+- **公共服务**：医生排班查询、医生信息查看等
 
-```
-users (1:1) doctors
-users (1:1) patients
-patients (1:N) cases
-doctors (1:N) cases
-patients (1:N) appointments
-doctors (1:N) appointments
-patients (1:N) hospitalization
-cases (1:N) prescriptions
-prescriptions (1:N) medications
-```
+系统采用RPC风格的Socket通信协议，支持实时双向通信。
 
-## 系统架构
+## 📁 文件结构
 
 ```
-├── include/                    # 头文件
-│   ├── DatabaseConnection.h   # 数据库连接和连接池
-│   ├── User.h                  # 用户实体和DAO
-│   ├── Doctor.h                # 医生实体和DAO
-│   ├── Patient.h               # 患者实体和DAO
-│   ├── Case.h                  # 病例实体和DAO
-│   ├── Appointment.h           # 预约实体和DAO
-│   ├── Hospitalization.h       # 住院实体和DAO
-│   ├── Prescription.h          # 处方实体和DAO
-│   ├── Medication.h            # 药物实体和DAO
-│   └── HospitalService.h       # 医院服务层
-├── src/                        # 源文件
-│   ├── DatabaseConnection.cpp
-│   ├── User.cpp
-│   ├── Doctor.cpp
-│   ├── Patient.cpp
-│   ├── Case.cpp
-│   ├── Appointment.cpp
-│   ├── Hospitalization.cpp
-│   ├── Prescription.cpp
-│   ├── Medication.cpp
-│   ├── HospitalService.cpp
-│   └── main.cpp               # 主程序
-├── sql/                       # SQL脚本
-│   └── hospital_schema.sql    # 数据库架构
-├── CMakeLists.txt             # CMake构建文件
-├── Makefile                   # Make构建文件
-└── README.md                  # 说明文档
+hospital-management-system/
+├── README.md                    # 项目说明文档
+├── Makefile                     # 编译配置文件
+├── docs/                        # 文档目录
+│   ├── API.md                   # API接口文档
+│   └── test.md                  # 测试用例说明
+├── include/                     # 头文件目录
+│   ├── ApiHandler.h             # API处理器头文件
+│   ├── DatabaseConnection.h     # 数据库连接头文件
+│   ├── HospitalService.h        # 医院服务头文件
+│   ├── User.h                   # 用户类头文件
+│   ├── Doctor.h                 # 医生类头文件
+│   ├── Patient.h                # 患者类头文件
+│   ├── Case.h                   # 病例类头文件
+│   ├── Appointment.h            # 预约类头文件
+│   ├── Hospitalization.h        # 住院类头文件
+│   ├── Prescription.h           # 处方类头文件
+│   └── Medication.h             # 药物类头文件
+├── src/                         # 源代码目录
+│   ├── main.cpp                 # 终端交互模式主程序
+│   ├── JsonAPI.cpp              # JSON API模式主程序
+│   ├── ApiHandler.cpp           # API处理器实现
+│   ├── DatabaseConnection.cpp   # 数据库连接实现
+│   ├── HospitalService.cpp      # 医院服务实现
+│   ├── User.cpp                 # 用户类实现
+│   ├── Doctor.cpp               # 医生类实现
+│   ├── Patient.cpp              # 患者类实现
+│   ├── Case.cpp                 # 病例类实现
+│   ├── Appointment.cpp          # 预约类实现
+│   ├── Hospitalization.cpp      # 住院类实现
+│   ├── Prescription.cpp         # 处方类实现
+│   └── Medication.cpp           # 药物类实现
+├── sql/                         # 数据库脚本
+│   └── hospital_complete_setup.sql  # 完整数据库初始化脚本
+├── test/                        # 测试目录
+│   ├── README.md                # 测试说明文档
+│   ├── run_all_tests.sh         # 批量测试脚本
+│   ├── run_single_test.sh       # 单个测试脚本
+│   ├── public/                  # 公共API测试用例
+│   ├── patient/                 # 患者API测试用例
+│   ├── doctor/                  # 医生API测试用例
+│   └── results/                 # 测试结果输出目录
+└── build/                       # 编译输出目录
+    ├── obj/                     # 对象文件
+    ├── bin/                     # 可执行文件
+    │   ├── Terminal             # 终端交互模式程序
+    │   └── JsonAPI              # JSON API模式程序
+    └── lib/                     # 静态库文件
 ```
 
-## 核心功能
+## ✨ 功能特性
 
-### 用户管理
-- 用户注册（医生/患者）
-- 用户登录认证
-- 用户信息管理
+### 🏥 核心业务功能
 
-### 医生管理
-- 医生信息注册
-- 按科室查询医生
-- 医生搜索功能
+#### **患者端功能 (14个API服务)**
+1. **身份认证**
+   - 患者注册 (`patient.auth.register`)
+   - 患者登录 (`patient.auth.login`)
+   - 找回密码 (`patient.auth.resetPassword`)
 
-### 患者管理
-- 患者信息注册
-- 患者信息查询
-- 按身份证号查找患者
+2. **个人信息管理**
+   - 获取个人信息 (`patient.profile.get`)
+   - 编辑个人信息 (`patient.profile.update`)
 
-### 病例管理
-- 创建医疗病例
-- 查看患者病例历史
-- 按医生/科室查询病例
+3. **预约挂号**
+   - 提交挂号/预约 (`patient.appointment.create`)
 
-### 预约管理
-- 预约挂号
-- 预约状态管理（已预约/已就诊/已取消）
-- 医生预约列表查看
+4. **病历管理**
+   - 查看病历和医嘱 (`patient.medicalRecord.list`)
 
-### 住院管理
-- 住院登记
-- 病房床位管理
-- 住院记录查询
+5. **处方管理**
+   - 查看处方列表 (`patient.prescription.list`)
+   - 查看处方详情 (`patient.prescription.get`)
 
-### 处方管理
-- 开具处方
-- 处方查询
-- 处方药物管理
+6. **医患沟通**
+   - 发送消息 (`patient.chat.sendMessage`)
+   - 获取聊天历史 (`patient.chat.getHistory`)
 
-## 环境要求
+7. **健康服务**
+   - 健康评估 (`patient.assessment.getLink`)
+   - 检查结果查询 (`patient.labResult.list`)
+   - 线上医疗服务 (`patient.consultation.requestOnline`)
 
-### 系统要求
-- Linux/macOS/Windows
-- C++17 或更高版本
-- CMake 3.10+
-- MySQL 5.7+ 或 MariaDB 10.2+
+#### **医生端功能 (16个API服务)**
+1. **身份认证**
+   - 医生登录 (`doctor.auth.login`)
+   - 找回密码 (`doctor.auth.resetPassword`)
+
+2. **个人信息管理**
+   - 获取个人信息 (`doctor.profile.get`)
+   - 编辑个人信息 (`doctor.profile.update`)
+
+3. **患者管理**
+   - 查看预约患者信息 (`doctor.appointment.list`)
+   - 查看患者病历详情 (`doctor.patient.getMedicalRecords`)
+
+4. **诊疗服务**
+   - 做出诊断，留下医嘱 (`doctor.medicalRecord.create`)
+   - 开具处方 (`doctor.prescription.create`)
+   - 上传检验报告 (`doctor.labResult.upload`)
+
+5. **状态管理**
+   - 更新在线状态 (`doctor.status.update`)
+
+6. **考勤管理**
+   - 日常打卡 (`doctor.attendance.checkIn`)
+   - 取消打卡 (`doctor.attendance.cancelCheckIn`)
+   - 查看考勤历史 (`doctor.attendance.getHistory`)
+
+7. **请假管理**
+   - 提交请假申请 (`doctor.leaveRequest.submit`)
+   - 查看请假列表 (`doctor.leaveRequest.list`)
+   - 销假 (`doctor.leaveRequest.cancel`)
+
+#### **公共服务 (2个API服务)**
+- 查询医生坐诊安排 (`public.schedule.list`)
+- 查看医生详细信息 (`public.doctor.get`)
+
+### 🔧 技术特性
+
+- **双运行模式**：终端交互模式 + JSON API模式
+- **连接池管理**：高效的MySQL连接池
+- **安全认证**：SHA256密码加密 + Token会话管理
+- **异常处理**：完善的错误处理和日志记录
+- **模块化设计**：清晰的MVC架构和DAO模式
+- **内存管理**：智能指针和RAII模式
+
+## 🛠 系统要求
+
+### 操作系统
+- Ubuntu 18.04+ / Debian 9+
+- CentOS 7+ / RHEL 7+
+- 其他支持MySQL和OpenSSL的Linux发行版
 
 ### 依赖库
-- MySQL C++ Connector (libmysqlclient-dev)
-- OpenSSL (libssl-dev)
-- pthread
+- **编译器**: GCC 7.0+ (支持C++17)
+- **数据库**: MySQL 5.7+ / MariaDB 10.2+
+- **加密库**: OpenSSL 1.1.0+
+- **JSON库**: nlohmann/json 3.0+
+- **构建工具**: Make, CMake (可选)
 
-## 安装和编译（C++项目构建）
+### 硬件要求
+- **内存**: 最小512MB，推荐2GB+
+- **存储**: 最小100MB，推荐1GB+
+- **CPU**: 支持x86_64架构
 
-> **💡 什么是编译？**
-> 编译是将C++源代码（.cpp文件）转换为计算机可执行程序的过程。
-> 与Python、JavaScript不同，C++是编译型语言，必须先编译才能运行。
+## 🚀 部署说明
 
-### Ubuntu/Debian 系统
+### 1. 安装依赖库
 
-#### 🔑 **MySQL密码问题快速解决**
-
-如果您不知道MySQL密码，请按以下顺序尝试：
-
+#### Ubuntu/Debian系统：
 ```bash
-# 方法1：直接按回车（空密码）
-mysql -u root -p
-# 当提示"Enter password:"时，直接按回车键
-
-# 方法2：使用sudo登录（推荐）
-sudo mysql -u root
-
-# 方法3：无密码登录
-mysql -u root
-```
-
-**成功登录后，您可以设置密码：**
-```sql
-mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
-mysql> FLUSH PRIVILEGES;
-mysql> EXIT;
-```
-
-1. **安装依赖**:
-```bash
-# 安装编译工具
+# 更新包管理器
 sudo apt-get update
-sudo apt-get install build-essential cmake
+
+# 安装编译工具
+sudo apt-get install -y build-essential cmake
 
 # 安装MySQL开发库
-sudo apt-get install libmysqlclient-dev mysql-server
+sudo apt-get install -y libmysqlclient-dev mysql-server
 
 # 安装OpenSSL开发库
-sudo apt-get install libssl-dev
+sudo apt-get install -y libssl-dev
+
+# 安装nlohmann/json库
+sudo apt-get install -y nlohmann-json3-dev
+
+# 或者使用Makefile自动安装
+make install-deps
 ```
 
-2. **启动和配置MySQL服务**:
+#### CentOS/RHEL系统：
+```bash
+# 安装编译工具
+sudo yum groupinstall -y "Development Tools"
+sudo yum install -y cmake
+
+# 安装MySQL开发库
+sudo yum install -y mysql-devel mysql-server
+
+# 安装OpenSSL开发库
+sudo yum install -y openssl-devel
+
+# 手动安装nlohmann/json库
+git clone https://github.com/nlohmann/json.git
+cd json && mkdir build && cd build
+cmake .. && make -j4 && sudo make install
+```
+
+### 2. 配置MySQL数据库
+
 ```bash
 # 启动MySQL服务
 sudo systemctl start mysql
-
-# 设置MySQL开机自启
 sudo systemctl enable mysql
 
-# 检查MySQL服务状态
-sudo systemctl status mysql
-
-# 登录MySQL（如果不知道密码，使用sudo）
-sudo mysql -u root
-# 或者尝试：mysql -u root -p（密码为空时直接按回车）
-```
-
-### 常见问题解决
-
-#### 0. MySQL密码问题
-```bash
-# 如果不知道密码，按顺序尝试：
-
-# 方法1：使用sudo（最常见）
-sudo mysql -u root
-
-# 方法2：无密码登录
-mysql -u root
-
-# 方法3：空密码（按回车）
-mysql -u root -p
-
-# 成功登录后，可以设置密码：
-mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
-mysql> FLUSH PRIVILEGES;
-```
-
-#### 1. MySQL服务未启动
-```bash
-# 检查MySQL服务状态
-sudo systemctl status mysql
-
-# 如果未运行，启动服务
-sudo systemctl start mysql
-
-# 如果启动失败，查看日志
-sudo journalctl -u mysql.service
-```
-
-#### 2. 无法连接MySQL
-```bash
-# 检查MySQL是否在监听端口
-sudo netstat -tlnp | grep :3306
-
-# 或使用ss命令
-sudo ss -tlnp | grep :3306
-```
-
-#### 3. 权限问题
-```bash
-# 如果无法以root用户登录，尝试
-sudo mysql -u root
-
-# 然后设置root密码
-ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_password';
-FLUSH PRIVILEGES;
-```
-
-## 数据库测试环境搭建
-
-### 快速搭建测试环境
-
-我们提供了四个SQL脚本来帮助您快速搭建测试环境：
-
-#### 0. **前端UI专用数据库** (`sql/clean_database_for_frontend.sql`) - **强烈推荐**
-严格按照您的预期数量创建数据，确保查询结果完全一致：
-- **13个用户**：5个医生 + 8个患者
-- **5个医生**：心内科、神经科、骨科、儿科、内科
-- **8个患者**：不同性别、年龄的真实数据
-- **8个病例**：各科室典型病例
-- **10个预约记录**：不同状态的预约
-- **5个住院记录**：不同病房的住院患者
-- **8个处方**：对应病例的处方
-- **16个药物记录**：详细的用药说明
-
-```bash
-# 导入前端UI专用数据库（强烈推荐）
-mysql -u root -p < sql/clean_database_for_frontend.sql
-```
-
-#### 1. **纯净数据库环境** (`sql/clean_database_setup.sql`) - **推荐用于前端UI**
-包含固定的基础测试数据，不会因API测试而改变：
-- **5个医生**（心内科、神经科、骨科、儿科、内科）
-- **8个患者**（不同性别、年龄）
-- **13个用户总数**（5医生 + 8患者）
-- 适用于前端UI界面查询，数据数量固定
-
-```bash
-# 导入纯净数据库（推荐用于前端开发）
-mysql -u root -p < sql/clean_database_setup.sql
-```
-
-#### 2. **完整测试环境** (`sql/hospital_complete_setup.sql`)
-包含完整的表结构、测试数据、视图和存储过程：
-- **6个医生**（包含API测试创建的医生）
-- **9个患者**（包含API测试创建的患者）
-- **15个用户总数**（6医生 + 9患者）
-
-```bash
-# 重要：请按照以下步骤操作
-
-# 第一步：确保MySQL服务正在运行
-sudo systemctl status mysql
-
-# 如果MySQL未运行，启动它
-sudo systemctl start mysql
-
-# 第二步：登录MySQL（注意是mysql命令，不是mysql-server）
-mysql -u root -p
-# 或者如果没有设置密码
-sudo mysql -u root
-
-# 第三步：在MySQL命令行中创建数据库
-# 看到 mysql> 提示符后，输入以下命令：
-CREATE DATABASE hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-# 第四步：退出MySQL
-EXIT;
-
-# 第五步：导入完整脚本
-mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
-
-# 或者在MySQL命令行中执行（需要正确的文件路径）：
-# 方法1：使用绝对路径
-mysql -u root -p hospital_db
-mysql> source /home/ada/桌面/share/sql/hospital_complete_setup.sql;
-
-# 方法2：先切换到项目目录
-cd /home/ada/桌面/share
-mysql -u root -p hospital_db
-mysql> source sql/hospital_complete_setup.sql;
-
-# 方法3：使用系统命令行导入（推荐）
-cd /home/ada/桌面/share
-mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
-```
-
-#### 3. **API接口测试** (`sql/api_test_examples.sql`)
-专门用于测试文档3.1-3.8接口的脚本：
-- **会动态创建新用户**（1个医生 + 1个患者）
-- **仅用于API功能测试**，不适合前端UI查询
-
-```bash
-# 在完整环境基础上运行接口测试
-mysql -u root -p hospital_db < sql/api_test_examples.sql
-```
-
-#### 4. **快速验证环境** (`sql/quick_setup.sql`)
-最小化的测试环境，用于快速验证：
-
-```bash
-# 快速创建基础测试环境
-mysql -u root -p < sql/quick_setup.sql
-```
-
-### 🎯 **选择建议**
-
-- **前端UI开发**：使用 `sql/clean_database_setup.sql` （**不需要运行API测试**）
-- **后端API开发**：使用 `sql/hospital_complete_setup.sql`
-- **API功能测试**：使用 `sql/hospital_complete_setup.sql` + `sql/api_test_examples.sql`
-- **快速验证**：使用 `sql/quick_setup.sql`
-
-### 完整的测试流程
-
-```bash
-# 1. 安装MySQL
-sudo apt-get update
-sudo apt-get install mysql-server
-
-# 2. 启动MySQL服务
-sudo systemctl start mysql
-sudo systemctl enable mysql
-
-# 3. 登录MySQL并创建数据库
-mysql -u root -p
-CREATE DATABASE hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-EXIT;
-
-# 4. 导入完整测试数据
-mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
-
-# 5. 运行接口测试
-mysql -u root -p hospital_db < sql/api_test_examples.sql
-
-# 6. 验证数据
-mysql -u root -p hospital_db
-SHOW TABLES;
-SELECT COUNT(*) FROM users;
-SELECT COUNT(*) FROM doctors;
-
-```
-C
-### 测试数据验证
-
-运行完整设置后，可以通过以下查询验证数据：
-
-```sql
--- 验证表创建
-SHOW TABLES;
-
--- 验证数据插入
-SELECT 
-    (SELECT COUNT(*) FROM users) AS total_users,
-    (SELECT COUNT(*) FROM doctors) AS total_doctors,
-    (SELECT COUNT(*) FROM patients) AS total_patients,
-    (SELECT COUNT(*) FROM cases) AS total_cases,
-    (SELECT COUNT(*) FROM appointments) AS total_appointments,
-    (SELECT COUNT(*) FROM hospitalization) AS total_hospitalizations,
-    (SELECT COUNT(*) FROM prescriptions) AS total_prescriptions,
-    (SELECT COUNT(*) FROM medications) AS total_medications;
-
--- 验证表关系（正确的SQL语法）
-SELECT 
-    u.username,
-    u.user_type,
-    COALESCE(d.name, p.name) AS name,
-    COALESCE(d.department, '患者') AS department
-FROM users u
-LEFT JOIN doctors d ON u.user_id = d.user_id
-LEFT JOIN patients p ON u.user_id = p.user_id
-ORDER BY u.user_type, u.user_id;
-```
-
-### 接口测试示例
-
-按照文档3.1-3.8接口进行测试：
-
-```sql
--- 3.1 用户表接口测试
-SELECT * FROM users WHERE user_id = 1;
-
--- 3.2 医生表接口测试
-SELECT * FROM doctors WHERE doctor_id = 1;
-
--- 3.3 患者表接口测试
-SELECT * FROM patients WHERE patient_id = 1;
-
--- 3.4 病例表接口测试
-SELECT * FROM cases WHERE case_id = 1;
-
--- 3.5 预约表接口测试
-SELECT * FROM appointments WHERE patient_id = 1;
-
--- 3.6 住院表接口测试
-SELECT * FROM hospitalization WHERE patient_id = 1;
-
--- 3.7 处方表接口测试
-SELECT * FROM prescriptions WHERE prescription_id = 1;
-
--- 3.8 药物表接口测试
-SELECT * FROM medications WHERE medication_id = 1;
-```
-
-### 业务流程测试
-
-测试完整的医院业务流程：
-
-```sql
--- 1. 患者预约
-INSERT INTO appointments (patient_id, doctor_id, appointment_time, department, status) 
-VALUES (1, 1, '2024-03-01 09:00:00', 'Cardiology', 'Booked');
-
--- 2. 患者就诊，创建病例
-INSERT INTO cases (patient_id, department, doctor_id, diagnosis) 
-VALUES (1, 'Cardiology', 1, '复查高血压，血压控制良好');
-
--- 3. 更新预约状态
-UPDATE appointments SET status = 'Attended' WHERE appointment_id = LAST_INSERT_ID();
-
--- 4. 开具处方
-INSERT INTO prescriptions (case_id, doctor_id, prescription_content) 
-VALUES (LAST_INSERT_ID(), 1, '继续服用降压药，定期监测');
-
--- 5. 添加药物
-INSERT INTO medications (prescription_id, medication_name, quantity, usage_instructions) 
-VALUES (LAST_INSERT_ID(), '氨氯地平片', 30, '每日一次，餐后服用');
-```
-
-### 清理测试环境
-
-如需重置测试环境：
-
-```sql
--- 清理所有数据（保留表结构）
-SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE TABLE medications;
-TRUNCATE TABLE prescriptions;
-TRUNCATE TABLE hospitalization;
-TRUNCATE TABLE appointments;
-TRUNCATE TABLE cases;
-TRUNCATE TABLE patients;
-TRUNCATE TABLE doctors;
-TRUNCATE TABLE users;
-SET FOREIGN_KEY_CHECKS = 1;
-
--- 或完全删除数据库重新开始
-DROP DATABASE IF EXISTS hospital_db;
-```
-
-3. **编译项目**:
-
-> **📝 编译说明：**
-> 以下命令会将src/目录下的C++源代码编译成可执行程序。
-> 编译成功后，您就可以运行医院管理系统了。
-
-使用 Make:
-```bash
-# 安装依赖
-make install-deps
-
-# 创建数据库
+# 创建数据库（如果需要）
 make create-db
 
-# 编译C++源代码（将.cpp文件转换为可执行程序）
-make
-
-# 运行编译好的程序
-make run
+# 或手动创建
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS hospital_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 ```
 
-使用 CMake:
-```bash
-# 创建构建目录
-mkdir build
-cd build
-
-# 配置构建环境
-cmake ..
-
-# 编译C++源代码
-make
-
-# 运行编译好的程序
-./HospitalManagementSystem
-```
-
-### **编译过程说明**
-
-1. **依赖安装**：安装MySQL开发库、OpenSSL等编译所需的库
-2. **源码编译**：将C++源文件（.cpp）编译为目标文件（.o）
-3. **链接过程**：将所有目标文件链接成最终的可执行程序
-4. **生成程序**：在`bin/`目录下生成`HospitalSystem`可执行文件
-
-### **编译成功标志**
-
-编译成功后，您会看到：
-```bash
-# Make方式
-ls -la bin/HospitalSystem
-
-# CMake方式  
-ls -la build/HospitalManagementSystem
-```
-
-## 使用说明
-
-### 启动程序
-
-编译完成后，运行可执行程序：
+### 3. 初始化数据库
 
 ```bash
-# Make方式编译的程序
-./bin/HospitalSystem
-
-# 或CMake方式编译的程序
-./build/HospitalManagementSystem
+# 使用提供的SQL脚本初始化数据库
+mysql -u root -p < sql/hospital_complete_setup.sql
 ```
 
-### 主要功能操作流程
+### 4. 编译项目
 
-1. **初始化系统**
-   - 启动程序
-   - 选择"初始化数据库"创建所有表
+```bash
+# 编译所有可执行文件
+make all
 
-2. **用户注册**
-   - 注册用户账户（医生或患者）
-   - 根据用户类型注册详细信息
+# 或分别编译
+make terminal    # 编译终端交互模式
+make jsonapi     # 编译JSON API模式
 
-3. **医生工作流程**
-   - 登录系统
-   - 查看预约列表
-   - 创建病例
-   - 开具处方
-   - 添加药物
+# 编译调试版本
+make debug
 
-4. **患者使用流程**
-   - 登录系统
-   - 预约挂号
-   - 查看病例历史
-   - 查看处方信息
-
-## API 接口
-
-### 用户管理 (UserDAO)
-```cpp
-// 用户CRUD操作
-bool createUser(const User& user);
-std::unique_ptr<User> getUserById(int userId);
-std::unique_ptr<User> getUserByUsername(const std::string& username);
-
-// 用户认证
-std::unique_ptr<User> authenticateUser(const std::string& username, const std::string& password);
+# 静态链接版本
+make static
 ```
 
-### 医生管理 (DoctorDAO)
-```cpp
-// 医生信息管理
-bool createDoctor(const Doctor& doctor);
-std::unique_ptr<Doctor> getDoctorById(int doctorId);
-std::vector<std::unique_ptr<Doctor>> getDoctorsByDepartment(const std::string& department);
+### 5. 验证安装
+
+```bash
+# 检查可执行文件
+ls -la build/bin/
+
+# 运行基本测试
+make test-jsonapi
 ```
 
-### 患者管理 (PatientDAO)
-```cpp
-// 患者信息管理
-bool createPatient(const Patient& patient);
-std::unique_ptr<Patient> getPatientById(int patientId);
-std::unique_ptr<Patient> getPatientByIdNumber(const std::string& idNumber);
+## 📚 接口文档
+
+### API通信协议
+
+系统使用RPC风格的JSON通信协议：
+
+#### **请求格式**
+```json
+{
+  "api": "模块.资源.动作",
+  "data": {
+    // 请求参数
+  }
+}
 ```
 
-### 病例管理 (CaseDAO)
-```cpp
-// 病例管理
-bool createCase(const Case& medicalCase);
-std::vector<std::unique_ptr<Case>> getCasesByPatientId(int patientId);
-std::vector<std::unique_ptr<Case>> getCasesByDoctorId(int doctorId);
+#### **响应格式**
+```json
+{
+  "status": "success|error",
+  "code": 200,
+  "message": "操作结果描述",
+  "data": {
+    // 响应数据
+  }
+}
 ```
 
-### 预约管理 (AppointmentDAO)
-```cpp
-// 预约管理
-bool createAppointment(const Appointment& appointment);
-std::vector<std::unique_ptr<Appointment>> getAppointmentsByPatientId(int patientId);
-bool updateAppointmentStatus(int appointmentId, AppointmentStatus status);
+### API端点分类
+
+#### **公共接口 (无需认证)**
+- `public.schedule.list` - 查询医生坐诊安排
+- `public.doctor.get` - 查看医生详细信息
+
+#### **患者端接口 (需要Token)**
+- **认证**: `patient.auth.*`
+- **个人信息**: `patient.profile.*`
+- **预约挂号**: `patient.appointment.*`
+- **病历处方**: `patient.medicalRecord.*`, `patient.prescription.*`
+- **沟通服务**: `patient.chat.*`
+- **健康服务**: `patient.assessment.*`, `patient.labResult.*`, `patient.consultation.*`
+
+#### **医生端接口 (需要Token)**
+- **认证**: `doctor.auth.*`
+- **个人信息**: `doctor.profile.*`
+- **患者管理**: `doctor.appointment.*`, `doctor.patient.*`
+- **诊疗服务**: `doctor.medicalRecord.*`, `doctor.prescription.*`, `doctor.labResult.*`
+- **状态管理**: `doctor.status.*`
+- **考勤管理**: `doctor.attendance.*`
+- **请假管理**: `doctor.leaveRequest.*`
+
+详细的API接口文档请参考：[docs/API.md](docs/API.md)
+
+## 🏃 运行说明
+
+### 运行模式
+
+系统提供两种运行模式：
+
+#### **1. 终端交互模式**
+```bash
+# 编译并运行
+make run-terminal
+
+# 或直接运行
+./build/bin/Terminal
 ```
 
-## 数据库接口
+**功能特点**：
+- 交互式菜单操作
+- 适合管理员使用
+- 支持所有核心功能
+- 实时数据库操作
 
-严格按照提供的文档实现以下查询接口：
+#### **2. JSON API模式**
+```bash
+# 基本用法
+./build/bin/JsonAPI --input <输入文件> --output <输出文件> [选项]
 
-### 3.1 用户表接口
-```sql
-SELECT * FROM users WHERE user_id = ?;
+# 完整参数示例
+./build/bin/JsonAPI \
+  --input test/public/public_doctor_get_valid_id.json \
+  --output result.json \
+  --host localhost \
+  --user root \
+  --password your_password \
+  --database hospital_db
 ```
 
-### 3.2 医生表接口
-```sql
-SELECT * FROM doctors WHERE doctor_id = ?;
+**命令行参数**：
+- `--input <文件>`：输入JSON请求文件路径
+- `--output <文件>`：输出JSON响应文件路径
+- `--host <地址>`：数据库主机地址（默认：localhost）
+- `--user <用户名>`：数据库用户名（默认：root）
+- `--password <密码>`：数据库密码（默认：空）
+- `--database <数据库名>`：数据库名称（默认：hospital_db）
+- `--help`：显示帮助信息
+
+### 使用示例
+
+#### **查询医生信息**
+```bash
+# 创建请求文件
+echo '{"api": "public.doctor.get", "data": {"doctorId": "1"}}' > request.json
+
+# 执行请求
+./build/bin/JsonAPI --input request.json --output response.json --password your_password
+
+# 查看结果
+cat response.json
 ```
 
-### 3.3 患者表接口
-```sql
-SELECT * FROM patients WHERE patient_id = ?;
+#### **患者登录**
+```bash
+# 创建登录请求
+echo '{
+  "api": "patient.auth.login",
+  "data": {
+    "account": "patient001@email.com",
+    "password": "password123"
+  }
+}' > login.json
+
+# 执行登录
+./build/bin/JsonAPI --input login.json --output login_result.json --password your_password
 ```
 
-### 3.4 病例表接口
-```sql
-SELECT * FROM cases WHERE case_id = ?;
+## 🧪 测试方法
+
+### 测试环境准备
+
+1. **确保数据库已初始化**
+```bash
+mysql -u root -p < sql/hospital_complete_setup.sql
 ```
 
-### 3.5 预约表接口
-```sql
-SELECT * FROM appointments WHERE patient_id = ?;
+2. **编译测试程序**
+```bash
+make jsonapi
 ```
 
-### 3.6 住院表接口
-```sql
-SELECT * FROM hospitalization WHERE patient_id = ?;
+### 测试执行
+
+#### **运行所有测试**
+```bash
+# 给脚本执行权限
+chmod +x test/run_all_tests.sh
+
+# 运行所有测试用例
+./test/run_all_tests.sh
 ```
 
-### 3.7 处方表接口
-```sql
-SELECT * FROM prescriptions WHERE prescription_id = ?;
+**测试输出示例**：
+```
+=== Public API 测试 ===
+运行测试: public_schedule_list_no_filters ... PASS
+运行测试: public_doctor_get_valid_id ... PASS
+
+=== Patient API 测试 ===
+运行测试: patient_auth_login_success ... PASS
+运行测试: patient_profile_get_success ... PASS
+
+=== Doctor API 测试 ===
+运行测试: doctor_auth_login_success ... PASS
+运行测试: doctor_appointment_list_success ... PASS
+
+=== 测试结果统计 ===
+总测试数: 63
+通过测试: 58
+失败测试: 5
 ```
 
-### 3.8 药物表接口
-```sql
-SELECT * FROM medications WHERE medication_id = ?;
+#### **运行单个测试**
+```bash
+# 给脚本执行权限
+chmod +x test/run_single_test.sh
+
+# 运行指定测试
+./test/run_single_test.sh test/public/public_doctor_get_valid_id.json
 ```
 
-## 安全特性
+#### **手动测试**
+```bash
+# 直接使用JsonAPI程序测试
+./build/bin/JsonAPI \
+  --input test/patient/patient_auth_login_success.json \
+  --output result.json \
+  --host localhost \
+  --user root \
+  --password your_password \
+  --database hospital_db
 
-### 数据安全
-- 密码使用SHA-256哈希存储
-- SQL注入防护
-- 输入验证和清理
-- 事务管理确保数据一致性
+# 查看测试结果
+cat result.json
+```
 
-### 访问控制
-- 用户认证机制
-- 基于用户类型的权限控制
-- 数据访问日志
+### 测试用例说明
 
-## 性能优化
+#### **测试覆盖范围**
+- **Public API**: 7个测试用例
+- **Patient API**: 26个测试用例  
+- **Doctor API**: 30个测试用例
+- **总计**: 63个测试用例
 
-### 数据库优化
-- 所有表使用InnoDB引擎
-- 关键字段建立索引
-- 外键约束确保数据完整性
-- 复杂查询使用视图优化
+#### **测试场景类型**
+- ✅ **正常功能测试** - 有效输入和预期输出
+- ❌ **异常处理测试** - 无效输入和错误处理
+- 🔒 **认证测试** - Token验证和权限控制
+- 📝 **参数验证测试** - 必需参数和格式验证
 
-### 应用层优化
-- 连接池减少连接开销
-- 智能指针管理内存
-- 事务管理确保数据一致性
+#### **测试数据**
+系统使用预置的测试数据：
+- **测试患者账户**: patient001@email.com / password123
+- **测试医生账户**: dr_zhang / password123
+- **测试Token**: patient_token_123456, doctor_token_67890
 
-## 故障排除
+### 测试结果分析
 
-### 常见问题
+测试结果保存在`test/results/`目录下：
+```bash
+# 查看测试结果
+ls test/results/
 
-1. **编译错误**:
-   - 检查MySQL开发库安装
-   - 确认C++17支持
-   - 检查OpenSSL库
+# 分析特定测试结果
+cat test/results/public/public_doctor_get_valid_id.json
+```
 
-2. **连接失败**:
-   - 确认MySQL服务运行
-   - 检查连接参数
-   - 验证数据库权限
+## 🔧 开发指南
 
-3. **运行时错误**:
-   - 检查数据库是否存在
-   - 确认表结构正确
-   - 查看错误日志
+### 编译选项
 
-## 扩展功能
+```bash
+# 查看所有可用目标
+make help
 
-### 可扩展模块
-- Web API接口
-- 报告生成系统
-- 数据分析功能
-- 移动端接口
-- 消息通知系统
+# 清理编译文件
+make clean
 
-## 许可证
+# 编译调试版本
+make debug
 
-本项目采用 MIT 许可证。
+# 编译静态链接版本
+make static
+```
 
-## 注意事项
+### 添加新功能
 
-- 这是基于提供的数据库架构文档严格实现的系统
-- 所有表名、字段名、数据类型都与文档保持一致
-- 表关系严格按照文档中的外键关系实现
-- 接口查询严格按照文档中的3.1-3.8接口设计实现
+1. **添加新的API端点**：
+   - 在`ApiHandler.h`中声明处理函数
+   - 在`ApiHandler.cpp`中实现处理逻辑
+   - 在构造函数中注册API路由
+
+2. **添加新的数据模型**：
+   - 创建对应的头文件和实现文件
+   - 实现DAO模式的数据访问层
+   - 在`HospitalService`中集成新功能
+
+3. **添加测试用例**：
+   - 在对应的`test/`子目录中创建JSON测试文件
+   - 更新测试脚本以包含新的测试用例
+
+### 调试技巧
+
+1. **数据库连接问题**：
+```bash
+# 测试数据库连接
+mysql -u root -p -e "USE hospital_db; SHOW TABLES;"
+```
+
+2. **编译问题**：
+```bash
+# 查看详细编译信息
+make clean && make all VERBOSE=1
+```
+
+3. **运行时问题**：
+```bash
+# 使用调试版本
+make debug
+gdb ./build/bin/JsonAPI
+```
