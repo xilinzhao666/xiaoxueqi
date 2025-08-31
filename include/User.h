@@ -77,6 +77,7 @@ public:
     // Authentication
     std::unique_ptr<User> authenticateUser(const std::string& username, const std::string& password);
     bool changePassword(int userId, const std::string& oldPassword, const std::string& newPassword);
+    bool resetPassword(int userId, const std::string& newPassword);
     
     // Search operations
     std::vector<std::unique_ptr<User>> searchUsers(const std::string& searchTerm);

@@ -265,6 +265,20 @@ bool UserDAO::changePassword(int userId, const std::string& oldPassword, const s
     return result;
 }
 
+bool UserDAO::resetPassword(int userId, const std::string& newPassword) {
+    auto conn = connectionPool->getConnection();
+    if (!conn) return false;
+    
+    std::string hashedNewPassword = hashPassword(newPassword);
+    std::stringstream query;
+    query << "UPDATE users SET password = '" << conn->escapeString(hashedNewPassword) 
+          << "' WHERE user_id = " << userId;
+    
+    bool result = conn->executeUpdate(query.str());
+    connectionPool->returnConnection(std::move(conn));
+    return result;
+}
+
 std::vector<std::unique_ptr<User>> UserDAO::searchUsers(const std::string& searchTerm) {
     auto conn = connectionPool->getConnection();
     std::vector<std::unique_ptr<User>> users;

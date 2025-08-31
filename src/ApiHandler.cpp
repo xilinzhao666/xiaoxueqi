@@ -248,15 +248,29 @@ ApiHandler::ApiResponse ApiHandler::handlePatientResetPassword(const json& data)
         
         std::string username = data["username"];
         std::string email = data["email"];
+        std::string verificationCode = data["verificationCode"];
         std::string newPassword = data["newPassword"];
         
         auto user = hospitalService->getUserDAO()->getUserByUsername(username);
-        if (!user || user->getEmail() != email || user->getUserType() != UserType::PATIENT) {
-            return ApiResponse("error", 404, "用户不存在或信息不匹配", json::object());
+        if (!user) {
+            return ApiResponse("error", 404, "用户不存在", json::object());
+        }
+
+        if (user->getEmail() != email) {
+            return ApiResponse("error", 404, "用户邮箱不匹配", json::object());
+        }
+
+        if (user->getUserType() != UserType::PATIENT) {
+            return ApiResponse("error", 404, "用户类型不匹配", json::object());
+        }
+
+        // 可以设计一套验证码机制，此处仅针对传入json采用最简单的验证码匹配
+        if (verificationCode != "654321") {
+            return ApiResponse("error", 404, "验证码不匹配", json::object());
         }
         
         // 更新密码
-        if (hospitalService->getUserDAO()->changePassword(user->getUserId(), user->getPasswordHash(), newPassword)) {
+        if (hospitalService->getUserDAO()->resetPassword(user->getUserId(), newPassword)) {
             return ApiResponse("success", 200, "密码重置成功", json::object());
         }
         
