@@ -37,31 +37,16 @@ public:
         std::string toJson() const;
     };
 
-    // 用户会话管理
-    struct UserSession {
-        int userId;
-        UserType userType;
-        std::string username;
-        std::chrono::system_clock::time_point loginTime;
-        std::chrono::system_clock::time_point lastActivity;
-        
-        bool isValid() const;
-        void updateActivity();
-    };
-
 private:
     std::shared_ptr<HospitalService> hospitalService;
-    std::unordered_map<std::string, UserSession> activeSessions;
-    std::mutex sessionMutex;
     
     // API处理函数类型定义
     using ApiHandlerFunc = std::function<ApiResponse(const json&)>;
     std::unordered_map<std::string, ApiHandlerFunc> apiHandlers;
     
-    // 会话管理
-    std::string generateToken(int userId, UserType userType, const std::string& username);
-    bool validateToken(const std::string& token, UserSession& session);
-    void cleanupExpiredSessions();
+    // Token验证 - 新的基于数据库的验证逻辑
+    bool validateToken(const std::string& token, int& userId, UserType& userType);
+    std::string generateTokenForUser(int userId, const std::string& username);
     
     // 输入验证
     bool validateEmail(const std::string& email);
@@ -124,10 +109,6 @@ public:
     
     // 主要接口函数
     std::string processApiRequest(const std::string& jsonInput);
-    
-    // 会话管理
-    void logoutUser(const std::string& token);
-    int getActiveSessionCount();
     
     // 系统状态
     json getSystemStats();

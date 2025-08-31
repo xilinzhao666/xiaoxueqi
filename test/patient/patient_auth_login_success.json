@@ -1,7 +1,7 @@
 {
   "api": "patient.auth.login",
   "data": {
-    "account": "newpatient@example.com",
+    "account": "newpatient_002@example.com",
     "password": "securePassword123"
   }
 }
