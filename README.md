@@ -405,6 +405,342 @@ mysql -u root -p < sql/hospital_complete_setup.sql
 make jsonapi
 ```
 
+## 🗄️ 数据库结构说明
+
+系统使用MySQL数据库`hospital_db`，包含以下表结构：
+
+### **核心业务表**
+
+#### **1. users (用户表)**
+存储患者和医生的账户信息
+```sql
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    user_type ENUM('Doctor', 'Patient') NOT NULL DEFAULT 'Patient',
+    email VARCHAR(100) UNIQUE,
+    phone_number VARCHAR(20),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_username (username),
+    INDEX idx_email (email),
+    INDEX idx_user_type (user_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **2. doctors (医生表)**
+存储医生的详细信息
+```sql
+CREATE TABLE doctors (
+    doctor_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    department VARCHAR(50) NOT NULL,
+    title VARCHAR(50),
+    working_hours VARCHAR(100) NOT NULL,
+    profile_picture VARCHAR(255),
+    
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_department (department),
+    INDEX idx_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **3. patients (患者表)**
+存储患者的个人信息
+```sql
+CREATE TABLE patients (
+    patient_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    gender ENUM('Male', 'Female') NOT NULL DEFAULT 'Male',
+    birth_date DATE NOT NULL,
+    id_number VARCHAR(20) UNIQUE NOT NULL,
+    phone_number VARCHAR(20),
+    
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_id_number (id_number),
+    INDEX idx_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **4. cases (病例表)**
+存储患者的病例信息
+```sql
+CREATE TABLE cases (
+    case_id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT NOT NULL,
+    department VARCHAR(50) NOT NULL,
+    doctor_id INT NOT NULL,
+    diagnosis TEXT NOT NULL,
+    diagnosis_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id) ON DELETE CASCADE,
+    INDEX idx_patient_id (patient_id),
+    INDEX idx_doctor_id (doctor_id),
+    INDEX idx_department (department)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **5. appointments (预约表)**
+存储患者的预约记录
+```sql
+CREATE TABLE appointments (
+    appointment_id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT NOT NULL,
+    doctor_id INT NOT NULL,
+    appointment_time DATETIME NOT NULL,
+    department VARCHAR(50) NOT NULL,
+    status ENUM('Booked', 'Attended', 'Cancelled') NOT NULL DEFAULT 'Booked',
+    
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id) ON DELETE CASCADE,
+    INDEX idx_patient_id (patient_id),
+    INDEX idx_doctor_id (doctor_id),
+    INDEX idx_appointment_time (appointment_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **6. hospitalization (住院表)**
+存储患者的住院记录
+```sql
+CREATE TABLE hospitalization (
+    hospitalization_id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT NOT NULL,
+    ward_number VARCHAR(20) NOT NULL,
+    bed_number VARCHAR(20) NOT NULL,
+    admission_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    attending_doctor VARCHAR(100) NOT NULL,
+    
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    INDEX idx_patient_id (patient_id),
+    INDEX idx_ward_number (ward_number)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **7. prescriptions (处方表)**
+存储医生开具的处方
+```sql
+CREATE TABLE prescriptions (
+    prescription_id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    doctor_id INT NOT NULL,
+    prescription_content TEXT NOT NULL,
+    issued_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (case_id) REFERENCES cases(case_id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id) ON DELETE CASCADE,
+    INDEX idx_case_id (case_id),
+    INDEX idx_doctor_id (doctor_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **8. medications (药物表)**
+存储处方药物详情
+```sql
+CREATE TABLE medications (
+    medication_id INT AUTO_INCREMENT PRIMARY KEY,
+    prescription_id INT NOT NULL,
+    medication_name VARCHAR(100) NOT NULL,
+    quantity INT NOT NULL,
+    usage_instructions TEXT NOT NULL,
+    
+    FOREIGN KEY (prescription_id) REFERENCES prescriptions(prescription_id) ON DELETE CASCADE,
+    INDEX idx_prescription_id (prescription_id),
+    INDEX idx_medication_name (medication_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### **扩展功能表**
+
+#### **9. doctor_schedules (医生排班表)**
+存储医生的坐诊安排
+```sql
+CREATE TABLE doctor_schedules (
+    schedule_id VARCHAR(50) PRIMARY KEY,
+    doctor_id INT NOT NULL,
+    date DATE NOT NULL,
+    time_period VARCHAR(50) NOT NULL,
+    registration_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    patient_limit INT NOT NULL DEFAULT 30,
+    booked_count INT NOT NULL DEFAULT 0,
+    
+    FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id) ON DELETE CASCADE,
+    INDEX idx_doctor_id (doctor_id),
+    INDEX idx_date (date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **10. chat_messages (聊天消息表)**
+存储医患沟通消息
+```sql
+CREATE TABLE chat_messages (
+    message_id VARCHAR(50) PRIMARY KEY,
+    patient_id INT NOT NULL,
+    doctor_id INT NOT NULL,
+    sender_type ENUM('patient', 'doctor') NOT NULL,
+    content TEXT NOT NULL,
+    sent_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id) ON DELETE CASCADE,
+    INDEX idx_patient_doctor (patient_id, doctor_id),
+    INDEX idx_sent_time (sent_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **11. lab_results (检验结果表)**
+存储患者的检验报告
+```sql
+CREATE TABLE lab_results (
+    result_id VARCHAR(50) PRIMARY KEY,
+    patient_id INT NOT NULL,
+    report_name VARCHAR(200) NOT NULL,
+    report_date DATE NOT NULL,
+    report_url VARCHAR(500),
+    uploaded_by INT,
+    
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (uploaded_by) REFERENCES doctors(doctor_id) ON DELETE SET NULL,
+    INDEX idx_patient_id (patient_id),
+    INDEX idx_report_date (report_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **12. doctor_status (医生状态表)**
+存储医生的在线状态
+```sql
+CREATE TABLE doctor_status (
+    doctor_id INT PRIMARY KEY,
+    status ENUM('online', 'offline') NOT NULL DEFAULT 'offline',
+    last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **13. attendance_records (考勤记录表)**
+存储医生的考勤信息
+```sql
+CREATE TABLE attendance_records (
+    record_id INT AUTO_INCREMENT PRIMARY KEY,
+    doctor_id INT NOT NULL,
+    check_in_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    check_out_time DATETIME NULL,
+    status ENUM('checked_in', 'checked_out', 'cancelled') NOT NULL DEFAULT 'checked_in',
+    
+    FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id) ON DELETE CASCADE,
+    INDEX idx_doctor_id (doctor_id),
+    INDEX idx_check_in_time (check_in_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+#### **14. leave_requests (请假申请表)**
+存储医生的请假申请
+```sql
+CREATE TABLE leave_requests (
+    request_id VARCHAR(50) PRIMARY KEY,
+    doctor_id INT NOT NULL,
+    contact_phone VARCHAR(20) NOT NULL,
+    leave_type ENUM('因公请假', '因私请假') NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    reason TEXT NOT NULL,
+    status ENUM('pending', 'approved', 'rejected', 'cancelled') NOT NULL DEFAULT 'pending',
+    submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id) ON DELETE CASCADE,
+    INDEX idx_doctor_id (doctor_id),
+    INDEX idx_start_date (start_date),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### **数据库视图**
+
+系统还包含以下视图以支持复杂查询：
+
+#### **patient_case_history (患者病例历史视图)**
+```sql
+CREATE VIEW patient_case_history AS
+SELECT 
+    p.patient_id, p.name AS patient_name, p.id_number,
+    c.case_id, c.diagnosis, c.diagnosis_date,
+    d.name AS doctor_name, c.department
+FROM patients p
+JOIN cases c ON p.patient_id = c.patient_id
+JOIN doctors d ON c.doctor_id = d.doctor_id;
+```
+
+#### **doctor_appointments (医生预约视图)**
+```sql
+CREATE VIEW doctor_appointments AS
+SELECT 
+    d.doctor_id, d.name AS doctor_name, d.department,
+    a.appointment_id, p.name AS patient_name,
+    a.appointment_time, a.status
+FROM doctors d
+JOIN appointments a ON d.doctor_id = a.doctor_id
+JOIN patients p ON a.patient_id = p.patient_id;
+```
+
+### **数据库配置要求**
+
+- **字符集**: utf8mb4
+- **排序规则**: utf8mb4_unicode_ci
+- **存储引擎**: InnoDB
+- **MySQL版本**: 5.7+ 或 MariaDB 10.2+
+
+### **初始化数据**
+
+数据库初始化脚本包含以下测试数据：
+- **5个医生账户** (dr_zhang, dr_li, dr_wang, dr_chen, dr_liu)
+- **8个患者账户** (patient_001 到 patient_008)
+- **8条病例记录** 涵盖各个科室
+- **10条预约记录** 包含不同状态
+- **5条住院记录** 
+- **8条处方记录** 
+- **16条药物记录**
+- **医生排班数据** 支持排班查询
+- **聊天消息数据** 支持医患沟通
+- **检验报告数据** 支持报告查询
+
+### **数据库连接配置**
+
+系统支持以下数据库连接参数：
+- **主机地址**: localhost (默认)
+- **端口**: 3306 (默认)
+- **用户名**: root (默认)
+- **密码**: 根据实际环境配置
+- **数据库名**: hospital_db
+- **连接池大小**: 10个连接 (默认)
+
+### **数据库维护**
+
+#### **备份数据库**
+```bash
+mysqldump -u root -p hospital_db > backup_$(date +%Y%m%d).sql
+```
+
+#### **恢复数据库**
+```bash
+mysql -u root -p hospital_db < backup_20250101.sql
+```
+
+#### **优化表**
+```bash
+mysql -u root -p -e "USE hospital_db; OPTIMIZE TABLE users, doctors, patients, cases, appointments, hospitalization, prescriptions, medications;"
+```
+
+#### **查看表状态**
+```bash
+mysql -u root -p -e "USE hospital_db; SHOW TABLE STATUS;"
+```
+
 ### 测试执行
 
 #### **运行所有测试**
