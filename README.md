@@ -241,8 +241,8 @@ mysql -u root -p hospital_db < sql/hospital_complete_setup.sql
 ### 4. 编译项目
 
 ```bash
-# 编译所有可执行文件
-make all
+# 编译所有可执行文件 (若有not_asyn_status报错，使用sudo make即可)
+make all 
 
 # 或分别编译
 make terminal    # 编译终端交互模式

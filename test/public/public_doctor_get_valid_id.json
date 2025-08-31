@@ -1,6 +1,6 @@
 {
   "api": "public.doctor.get",
   "data": {
-    "doctorId": "1"
+    "doctorId": "doc_1"
   }
 }

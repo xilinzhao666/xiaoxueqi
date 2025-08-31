@@ -177,7 +177,7 @@ ApiHandler::ApiResponse ApiHandler::handlePublicDoctorGet(const json& data) {
         
         std::string doctorIdStr = data["doctorId"].get<std::string>();
         // 提取数字ID（假设格式为 "doc_12345"）
-        int doctorId = std::stoi(doctorIdStr);
+        int doctorId = std::stoi(doctorIdStr.substr(4));
         
         auto doctor = hospitalService->getDoctorDAO()->getDoctorById(doctorId);
         if (!doctor) {
