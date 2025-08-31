@@ -1,0 +1,1 @@
+{"code":200,"data":{"bio":"专业医生，经验丰富","dailyPatientLimit":30,"department":"Cardiology","employeeId":"DOC1","name":"张医生","photoUrl":"dr_zhang.jpg","registrationFee":50.0,"title":"主任医师"},"message":"获取医生信息成功","status":"success"}

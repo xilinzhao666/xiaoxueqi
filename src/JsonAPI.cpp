@@ -39,6 +39,14 @@ std::string readFileContent(const std::string& filePath) {
 }
 
 void writeFileContent(const std::string& filePath, const std::string& content) {
+    // 确保输出目录存在
+    size_t lastSlash = filePath.find_last_of('/');
+    if (lastSlash != std::string::npos) {
+        std::string directory = filePath.substr(0, lastSlash);
+        std::string createDirCommand = "mkdir -p " + directory;
+        system(createDirCommand.c_str());
+    }
+    
     std::ofstream file(filePath);
     if (!file.is_open()) {
         throw std::runtime_error("无法创建输出文件: " + filePath);
