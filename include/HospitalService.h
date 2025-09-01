@@ -45,6 +45,9 @@ public:
     PrescriptionDAO* getPrescriptionDAO() { return prescriptionDAO.get(); }
     MedicationDAO* getMedicationDAO() { return medicationDAO.get(); }
     
+    // Get connection pool for transaction management
+    std::shared_ptr<ConnectionPool> getConnectionPool() { return connectionPool; }
+    
     // Business logic methods
     bool registerUser(const std::string& username, const std::string& password, 
                      UserType userType, const std::string& email = "", 
@@ -118,6 +121,7 @@ public:
     
 private:
     std::string hashPassword(const std::string& password);
+    std::string generateDefaultIdNumber(int userId);
 };
 
 #endif // HOSPITAL_SERVICE_H

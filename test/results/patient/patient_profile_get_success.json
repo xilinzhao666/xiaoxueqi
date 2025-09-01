@@ -1,1 +1,1 @@
-{"code":401,"data":{},"message":"认证令牌无效或已过期","status":"error"}
+{"code":200,"data":{"age":35,"dateOfBirth":"1990-01-01","email":"newpatient_test@example.com","gender":"Male","idCardNumber":"110101202509010020","name":"新患者","phone":""},"message":"获取个人信息成功","status":"success"}

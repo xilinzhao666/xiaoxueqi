@@ -295,11 +295,16 @@ ApiHandler::ApiResponse ApiHandler::handlePatientProfileGet(const json& data) {
             return ApiResponse("error", 401, "无效的认证token", json::object());
         }
         
+        // std::cout << "userId:" << userId << std::endl;
         auto user = hospitalService->getUserDAO()->getUserById(userId);
         auto patient = hospitalService->getPatientDAO()->getPatientByUserId(userId);
         
-        if (!user || !patient) {
-            return ApiResponse("error", 404, "患者信息不存在", json::object());
+        if (!user) {
+            return ApiResponse("error", 404, "用户信息不存在", json::object());
+        }
+
+        if (!patient) {
+            return ApiResponse("error", 404, "用户非患者", json::object());
         }
         
         json responseData;
@@ -314,7 +319,7 @@ ApiHandler::ApiResponse ApiHandler::handlePatientProfileGet(const json& data) {
         return ApiResponse("success", 200, "获取个人信息成功", responseData);
         
     } catch (const std::exception& e) {
-        return ApiResponse("error", 500, "获取个人信息失败", json::object());
+        return ApiResponse("error", 500, "获取个人信息失败", std::string(e.what()));
     }
 }
 

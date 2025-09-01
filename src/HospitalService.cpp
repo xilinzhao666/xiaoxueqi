@@ -222,11 +222,92 @@ bool HospitalService::registerUser(const std::string& username, const std::strin
         return false;
     }
     
-    User user(username, password, userType);
-    user.setEmail(email);
-    user.setPhoneNumber(phoneNumber);
+    auto conn = connectionPool->getConnection();
+    if (!conn) return false;
     
-    return userDAO->createUser(user);
+    if (!conn->beginTransaction()) {
+        connectionPool->returnConnection(std::move(conn));
+        return false;
+    }
+    
+    // 1. 创建用户记录 - 直接在这里执行SQL而不是通过DAO
+    std::string hashedPassword = hashPassword(password);
+    
+    std::stringstream userQuery;
+    userQuery << "INSERT INTO users (username, password, user_type, email, phone_number) VALUES ("
+              << "'" << conn->escapeString(username) << "', "
+              << "'" << conn->escapeString(hashedPassword) << "', "
+              << "'" << (userType == UserType::DOCTOR ? "Doctor" : "Patient") << "', "
+              << (email.empty() ? "NULL" : "'" + conn->escapeString(email) + "'") << ", "
+              << (phoneNumber.empty() ? "NULL" : "'" + conn->escapeString(phoneNumber) + "'") << ")";
+    
+    if (!conn->executeUpdate(userQuery.str())) {
+        conn->rollback();
+        connectionPool->returnConnection(std::move(conn));
+        return false;
+    }
+    
+    // 2. 立即获取新创建用户的ID
+    int newUserId = static_cast<int>(conn->getLastInsertId());
+    
+    if (newUserId <= 0) {
+        std::cerr << "Failed to get last insert ID: " << newUserId << std::endl;
+        conn->rollback();
+        connectionPool->returnConnection(std::move(conn));
+        return false;
+    }
+    
+    std::cout << "Created user with ID: " << newUserId << std::endl;
+    
+    // 3. 根据用户类型创建对应的业务记录
+    bool businessRecordCreated = false;
+    
+    if (userType == UserType::PATIENT) {
+        // 直接执行患者插入SQL
+        std::string defaultIdNumber = generateDefaultIdNumber(newUserId);
+        
+        std::stringstream patientQuery;
+        patientQuery << "INSERT INTO patients (user_id, name, gender, birth_date, id_number, phone_number) VALUES ("
+                     << newUserId << ", "
+                     << "'新患者', "
+                     << "'Male', "
+                     << "'1990-01-01', "
+                     << "'" << conn->escapeString(defaultIdNumber) << "', "
+                     << (phoneNumber.empty() ? "NULL" : "'" + conn->escapeString(phoneNumber) + "'") << ")";
+        
+        businessRecordCreated = conn->executeUpdate(patientQuery.str());
+        
+    } else if (userType == UserType::DOCTOR) {
+        // 直接执行医生插入SQL
+        std::stringstream doctorQuery;
+        doctorQuery << "INSERT INTO doctors (user_id, name, department, title, working_hours) VALUES ("
+                    << newUserId << ", "
+                    << "'新医生', "
+                    << "'General', "
+                    << "'医师', "
+                    << "'周一至周五 9:00-17:00')";
+        
+        businessRecordCreated = conn->executeUpdate(doctorQuery.str());
+    }
+    
+    if (!businessRecordCreated) {
+        std::cerr << "Failed to create business record for user type: " 
+                  << (userType == UserType::DOCTOR ? "Doctor" : "Patient") << std::endl;
+        conn->rollback();
+        connectionPool->returnConnection(std::move(conn));
+        return false;
+    }
+    
+    // 4. 提交事务
+    bool result = conn->commit();
+    connectionPool->returnConnection(std::move(conn));
+    
+    if (result) {
+        std::cout << "Successfully registered user: " << username 
+                  << " with ID: " << newUserId << std::endl;
+    }
+    
+    return result;
 }
 
 std::unique_ptr<User> HospitalService::loginUser(const std::string& username, const std::string& password) {
@@ -487,5 +568,22 @@ std::string HospitalService::hashPassword(const std::string& password) {
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
         ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
     }
+    return ss.str();
+}
+
+std::string HospitalService::generateDefaultIdNumber(int userId) {
+    // 生成基于用户ID的唯一默认身份证号
+    // 格式：110101 + 年份 + 月日 + 用户ID补零到4位
+    auto now = std::chrono::system_clock::now();
+    auto time_t = std::chrono::system_clock::to_time_t(now);
+    auto tm = *std::localtime(&time_t);
+    
+    std::stringstream ss;
+    ss << "110101"  // 地区代码
+       << (1900 + tm.tm_year)  // 年份
+       << std::setfill('0') << std::setw(2) << (tm.tm_mon + 1)  // 月份
+       << std::setfill('0') << std::setw(2) << tm.tm_mday  // 日期
+       << std::setfill('0') << std::setw(4) << (userId % 10000);  // 用户ID后4位
+    
     return ss.str();
 }

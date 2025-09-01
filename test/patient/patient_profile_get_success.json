@@ -1,6 +1,6 @@
 {
   "api": "patient.profile.get",
   "data": {
-    "token": "patient_token_123456"
+    "token": "10229482365fba7e3b5b7fb06e3632cec14e21fd43deef457e0f6486cb776dba"
   }
 }

@@ -50,8 +50,15 @@ bool UserDAO::createUser(const User& user) {
           << (user.getPhoneNumber().empty() ? "NULL" : "'" + conn->escapeString(user.getPhoneNumber()) + "'") << ")";
     
     bool result = conn->executeUpdate(query.str());
+    
+    if (!result) {
+        connectionPool->returnConnection(std::move(conn));
+        return false;
+    }
+    
+    // 不要立即归还连接，让调用者获取last_insert_id
     connectionPool->returnConnection(std::move(conn));
-    return result;
+    return true;
 }
 
 std::unique_ptr<User> UserDAO::getUserById(int userId) {
