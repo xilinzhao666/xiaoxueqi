@@ -186,11 +186,20 @@ ApiHandler::ApiResponse ApiHandler::handlePatientRegister(const json& data) {
         
         std::string email = data["email"];
         std::string password = data["password"];
-        
-        if (!validateEmail(email) || !validatePassword(password)) {
-            return ApiResponse("error", 400, "邮箱格式或密码不符合要求", json::object());
+        std::string verificationCode = data["verificationCode"];
+
+        if (!validateEmail(email)) {
+            return ApiResponse("error", 400, "邮箱格式不符合要求", json::object());
         }
         
+        if (!validatePassword(password)) {
+            return ApiResponse("error", 400, "密码不符合要求", json::object());
+        }
+
+        if (verificationCode != "123456") {
+            return ApiResponse("error", 400, "验证码错误", json::object());
+        }
+
         // 检查用户是否已存在
         if (hospitalService->getUserDAO()->userExists(email, email)) {
             return ApiResponse("error", 409, "用户已存在", json::object());
@@ -395,7 +404,7 @@ ApiHandler::ApiResponse ApiHandler::handlePatientAppointmentCreate(const json& d
         
         std::string scheduleId = data["scheduleId"];
         // 从scheduleId解析出doctorId (假设格式为 "sched_doctorId")
-        int doctorId = 1; // 默认值，实际应从scheduleId解析
+        int doctorId = 0; // 默认值，实际应从scheduleId解析
         if (scheduleId.find("sched_") == 0) {
             doctorId = std::stoi(scheduleId.substr(6));
         }
@@ -409,18 +418,27 @@ ApiHandler::ApiResponse ApiHandler::handlePatientAppointmentCreate(const json& d
         int appointmentId = hospitalService->bookAppointment(
             patient->getPatientId(), doctorId, appointmentTime, doctor->getDepartment());
         
+        // std::cout << "doctorId:" << doctorId << std::endl;
+        // std::cout << "patientId:" << patient->getPatientId() << std::endl;
+        // std::cout << "appointmentId:" << appointmentId << std::endl;
+
         if (appointmentId > 0) {
-            json responseData;
+            std::cout << "Appointment created successfully with ID: " << appointmentId << std::endl;
+            json responseData = json::object();
             responseData["appointmentId"] = "appt_" + std::to_string(appointmentId);
             responseData["status"] = "scheduled";
+            responseData["appointmentTime"] = appointmentTime;
+            responseData["doctorName"] = doctor->getName();
+            responseData["department"] = doctor->getDepartment();
             
             return ApiResponse("success", 201, "预约成功", responseData);
+        } else {
+            std::cerr << "Failed to create appointment" << std::endl;
+            return ApiResponse("error", 500, "预约失败", json::object());
         }
         
-        return ApiResponse("error", 500, "预约失败", json::object());
-        
     } catch (const std::exception& e) {
-        return ApiResponse("error", 500, "预约失败", json::object());
+        return ApiResponse("error", 500, "预约失败", std::string(e.what()));
     }
 }
 

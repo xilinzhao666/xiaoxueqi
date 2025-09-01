@@ -1,11 +1,11 @@
 {
   "api": "patient.profile.update",
   "data": {
-    "token": "patient_token_123456",
+    "token": "10229482365fba7e3b5b7fb06e3632cec14e21fd43deef457e0f6486cb776dba",
     "name": "张三",
-    "dateOfBirth": "1990-01-15",
+    "dateOfBirth": "2005-09-01",
     "idCardNumber": "340123199001151234",
-    "phone": "13800138000",
-    "email": "patient_new@example.com"
+    "phone": "13800138123",
+    "email": "newpatient_test@example.com"
   }
 }

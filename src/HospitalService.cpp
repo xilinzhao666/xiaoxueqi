@@ -372,6 +372,7 @@ int HospitalService::createMedicalCase(int patientId, const std::string& departm
 int HospitalService::bookAppointment(int patientId, int doctorId, const std::string& appointmentTime,
                                     const std::string& department) {
     if (appointmentTime.empty() || department.empty()) {
+        std::cerr << "Empty appointmentTime or department" << std::endl;
         return 0;
     }
     
@@ -379,20 +380,38 @@ int HospitalService::bookAppointment(int patientId, int doctorId, const std::str
     auto doctor = doctorDAO->getDoctorById(doctorId);
     
     if (!patient || !doctor) {
+        std::cerr << "Patient or doctor not found. PatientId: " << patientId 
+                  << ", DoctorId: " << doctorId << std::endl;
         return 0;
     }
     
-    Appointment appointment(patientId, doctorId, appointmentTime, department);
-    
     auto conn = connectionPool->getConnection();
-    if (!conn) return 0;
-    
-    if (appointmentDAO->createAppointment(appointment)) {
-        return static_cast<int>(conn->getLastInsertId());
+    if (!conn) {
+        std::cerr << "Failed to get database connection" << std::endl;
+        return 0;
     }
     
-    connectionPool->returnConnection(std::move(conn));
-    return 0;
+    // 直接执行SQL插入，避免DAO层的问题
+    std::stringstream query;
+    query << "INSERT INTO appointments (patient_id, doctor_id, appointment_time, department, status) VALUES ("
+          << patientId << ", "
+          << doctorId << ", "
+          << "'" << conn->escapeString(appointmentTime) << "', "
+          << "'" << conn->escapeString(department) << "', "
+          << "'Booked')";
+    
+    std::cout << "Executing appointment query: " << query.str() << std::endl;
+    
+    if (conn->executeUpdate(query.str())) {
+        int appointmentId = static_cast<int>(conn->getLastInsertId());
+        std::cout << "Appointment created successfully with ID: " << appointmentId << std::endl;
+        connectionPool->returnConnection(std::move(conn));
+        return appointmentId;
+    } else {
+        std::cerr << "Failed to create appointment: " << conn->getError() << std::endl;
+        connectionPool->returnConnection(std::move(conn));
+        return 0;
+    }
 }
 
 int HospitalService::admitPatient(int patientId, const std::string& wardNumber, const std::string& bedNumber,
